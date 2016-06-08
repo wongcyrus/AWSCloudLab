@@ -1,0 +1,449 @@
+{
+  "AWSTemplateFormatVersion": "2010-09-09",
+  "Description": "AWS Cloud Lab Class - Delete Stack and Email Login",
+  "Parameters": {
+    "LambdaBucket": {
+      "Description": "Bucket stores nodejs Code",
+      "Type": "String"
+    },
+    "LambdaBucketKey": {
+      "Description": "key of nodejs Code",
+      "Type": "String"
+    },
+    "Lab": {
+      "Description": "lab",
+      "Type": "String"
+    },
+    "StackId": {
+      "Description": "StackId",
+      "Type": "String"
+    },
+    "LabHash": {
+      "Description": "lab",
+      "Type": "String"
+    },
+    "CronExpression": {
+      "Description": "Cron Expression",
+      "Type": "String"
+    },
+    "KeyPairsBucket": {
+      "Description": "Key Pairs Bucket",
+      "Type": "String"
+    }
+  },
+  "Resources": {
+    "DeleteStackExecutionRole": {
+      "Type": "AWS::IAM::Role",
+      "Properties": {
+        "AssumeRolePolicyDocument": {
+          "Version": "2012-10-17",
+          "Statement": [
+            {
+              "Effect": "Allow",
+              "Principal": {
+                "Service": [
+                  "lambda.amazonaws.com"
+                ]
+              },
+              "Action": [
+                "sts:AssumeRole"
+              ]
+            }
+          ]
+        },
+        "Path": "/"
+      }
+    },
+    "DeleteStackExecutionPolicy": {
+      "DependsOn": [
+        "DeleteStackExecutionRole"
+      ],
+      "Type": "AWS::IAM::Policy",
+      "Properties": {
+        "PolicyName": "DeleteStackExecutionRolePolicy",
+        "Roles": [
+          {
+            "Ref": "DeleteStackExecutionRole"
+          }
+        ],
+        "PolicyDocument": {
+          "Version": "2012-10-17",
+          "Statement": [
+            {
+              "Effect": "Allow",
+              "Action": [
+                "logs:CreateLogGroup",
+                "logs:CreateLogStream",
+                "logs:PutLogEvents"
+              ],
+              "Resource": "arn:aws:logs:*:*:*"
+            },
+            {
+              "Action": [
+                "lambda:InvokeFunction",
+                "lambda:GetFunction"
+              ],
+              "Resource": [
+                "*"
+              ],
+              "Effect": "Allow"
+            }
+          ]
+        }
+      }
+    },
+    "DeleteStackFunction": {
+      "Type": "AWS::Lambda::Function",
+      "DependsOn": [
+        "DeleteStackExecutionRole",
+        "DeleteStackExecutionPolicy"
+      ],
+      "Properties": {
+        "FunctionName": {
+          "Fn::Join": [
+            "-",
+            [
+              {
+                "Ref": "LabHash"
+              },
+              "DeleteFunction"
+            ]
+          ]
+        },
+        "Description": {
+          "Ref": "StackId"
+        },
+        "Code": {
+          "S3Bucket": {
+            "Ref": "LambdaBucket"
+          },
+          "S3Key": {
+            "Ref": "LambdaBucketKey"
+          }
+        },
+        "Role": {
+          "Fn::GetAtt": [
+            "DeleteStackExecutionRole",
+            "Arn"
+          ]
+        },
+        "Timeout": 60,
+        "Handler": "deleteLabEventHandlerLambda.handler",
+        "Runtime": "nodejs4.3",
+        "MemorySize": 128
+      }
+    },
+    "ScheduledRule": {
+      "Type": "AWS::Events::Rule",
+      "Properties": {
+        "Description": "ScheduledRule",
+        "ScheduleExpression": {
+          "Fn::Join": [
+            "",
+            [
+              "cron(",
+              {
+                "Ref": "CronExpression"
+              },
+              ")"
+            ]
+          ]
+        },
+        "State": "ENABLED",
+        "Targets": [
+          {
+            "Arn": {
+              "Fn::GetAtt": [
+                "DeleteStackFunction",
+                "Arn"
+              ]
+            },
+            "Id": "TargetFunctionV1"
+          }
+        ]
+      }
+    },
+    "PermissionForEventsToInvokeAWSCloudLabSchedulerLambda": {
+      "Type": "AWS::Lambda::Permission",
+      "Properties": {
+        "FunctionName": {
+          "Ref": "DeleteStackFunction"
+        },
+        "Action": "lambda:InvokeFunction",
+        "Principal": "events.amazonaws.com",
+        "SourceArn": {
+          "Fn::GetAtt": [
+            "ScheduledRule",
+            "Arn"
+          ]
+        }
+      }
+    },
+    "EmailLoginExecutionRole": {
+      "Type": "AWS::IAM::Role",
+      "Properties": {
+        "AssumeRolePolicyDocument": {
+          "Version": "2012-10-17",
+          "Statement": [
+            {
+              "Effect": "Allow",
+              "Principal": {
+                "Service": [
+                  "lambda.amazonaws.com"
+                ]
+              },
+              "Action": [
+                "sts:AssumeRole"
+              ]
+            }
+          ]
+        },
+        "Path": "/"
+      }
+    },
+    "EmailLoginExecutionPolicy": {
+      "DependsOn": [
+        "DeleteStackExecutionRole"
+      ],
+      "Type": "AWS::IAM::Policy",
+      "Properties": {
+        "PolicyName": "EmailLoginExecutionPolicy",
+        "Roles": [
+          {
+            "Ref": "EmailLoginExecutionRole"
+          }
+        ],
+        "PolicyDocument": {
+          "Version": "2012-10-17",
+          "Statement": [
+            {
+              "Effect": "Allow",
+              "Action": [
+                "logs:CreateLogGroup",
+                "logs:CreateLogStream",
+                "logs:PutLogEvents"
+              ],
+              "Resource": "arn:aws:logs:*:*:*"
+            },
+            {
+              "Action": [
+                "cloudformation:ListStacks",
+                "cloudformation:DescribeStacks",
+                "cloudformation:DescribeStackEvents",
+                "cloudformation:DescribeStackResource",
+                "cloudformation:DescribeStackResources",
+                "ec2:DescribeInstances",
+                "ses:SendEmail",
+                "ses:SendRawEmail"
+              ],
+              "Resource": [
+                "*"
+              ],
+              "Effect": "Allow"
+            },
+            {
+              "Action": [
+                "cloudformation:DeleteStack"
+              ],
+              "Resource": [
+                "*"
+              ],
+              "Effect": "Allow"
+            },
+            {
+              "Resource": {
+                "Fn::Join": [
+                  "",
+                  [
+                    "arn:aws:s3:::",
+                    {
+                      "Ref": "KeyPairsBucket"
+                    },
+                    "/*"
+                  ]
+                ]
+              },
+              "Action": [
+                "s3:GetObject",
+                "s3:PutObjectAcl"
+              ],
+              "Effect": "Allow"
+            }
+          ]
+        }
+      }
+    },
+    "EmailLoginFunction": {
+      "Type": "AWS::Lambda::Function",
+      "DependsOn": [
+        "EmailLoginExecutionRole",
+        "EmailLoginExecutionPolicy"
+      ],
+      "Properties": {
+        "FunctionName": {
+          "Fn::Join": [
+            "-",
+            [
+              {
+                "Ref": "LabHash"
+              },
+              "EmailLoginFunction"
+            ]
+          ]
+        },
+        "Code": {
+          "S3Bucket": {
+            "Ref": "LambdaBucket"
+          },
+          "S3Key": {
+            "Ref": "LambdaBucketKey"
+          }
+        },
+        "Role": {
+          "Fn::GetAtt": [
+            "EmailLoginExecutionRole",
+            "Arn"
+          ]
+        },
+        "Timeout": 120,
+        "Handler": "emailloginLambda.handler",
+        "Runtime": "nodejs4.3",
+        "MemorySize": 128
+      }
+    },
+    "KeyPairsExecutionRole": {
+      "Type": "AWS::IAM::Role",
+      "Properties": {
+        "AssumeRolePolicyDocument": {
+          "Version": "2012-10-17",
+          "Statement": [
+            {
+              "Effect": "Allow",
+              "Principal": {
+                "Service": [
+                  "lambda.amazonaws.com"
+                ]
+              },
+              "Action": [
+                "sts:AssumeRole"
+              ]
+            }
+          ]
+        },
+        "Path": "/"
+      }
+    },
+    "KeyPairsExecutionPolicy": {
+      "DependsOn": [
+        "KeyPairsExecutionRole"
+      ],
+      "Type": "AWS::IAM::Policy",
+      "Properties": {
+        "PolicyName": "KeyPairsExecutionPolicy",
+        "Roles": [
+          {
+            "Ref": "KeyPairsExecutionRole"
+          }
+        ],
+        "PolicyDocument": {
+          "Version": "2012-10-17",
+          "Statement": [
+            {
+              "Effect": "Allow",
+              "Action": [
+                "logs:CreateLogGroup",
+                "logs:CreateLogStream",
+                "logs:PutLogEvents"
+              ],
+              "Resource": "arn:aws:logs:*:*:*"
+            },
+            {
+              "Action": [
+                "ec2:CreateKeyPair",
+                "ec2:DeleteKeyPair"
+              ],
+              "Resource": [
+                "*"
+              ],
+              "Effect": "Allow"
+            },
+            {
+              "Resource": {
+                "Fn::Join": [
+                  "",
+                  [
+                    "arn:aws:s3:::",
+                    {
+                      "Ref": "KeyPairsBucket"
+                    },
+                    "/*"
+                  ]
+                ]
+              },
+              "Action": [
+                "s3:PutObject"
+              ],
+              "Effect": "Allow"
+            }
+          ]
+        }
+      }
+    },
+    "KeyPairsFunction": {
+      "Type": "AWS::Lambda::Function",
+      "DependsOn": [
+        "KeyPairsExecutionRole",
+        "KeyPairsExecutionPolicy"
+      ],
+      "Properties": {
+        "FunctionName": {
+          "Fn::Join": [
+            "-",
+            [
+              {
+                "Ref": "LabHash"
+              },
+              "KeyPairsFunction"
+            ]
+          ]
+        },
+        "Code": {
+          "S3Bucket": {
+            "Ref": "LambdaBucket"
+          },
+          "S3Key": {
+            "Ref": "LambdaBucketKey"
+          }
+        },
+        "Role": {
+          "Fn::GetAtt": [
+            "KeyPairsExecutionRole",
+            "Arn"
+          ]
+        },
+        "Timeout": 120,
+        "Handler": "keypairLambda.handler",
+        "Runtime": "nodejs4.3",
+        "MemorySize": 128
+      }
+    }
+  },
+  "Outputs": {
+    "EmailLoginFunctionArn": {
+      "Value": {
+        "Fn::GetAtt": [
+          "EmailLoginFunction",
+          "Arn"
+        ]
+      }
+    },
+    "KeyPairsFunctionArn": {
+      "Value": {
+        "Fn::GetAtt": [
+          "KeyPairsFunction",
+          "Arn"
+        ]
+      }
+    }
+  }
+}

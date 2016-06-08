@@ -1,0 +1,37 @@
+    "CFNUser<%-i%>": {
+      "Type": "AWS::IAM::User",
+      "Properties": {
+        "LoginProfile": {
+          "Password": "<%-user.password%>"
+        },
+        "Policies" : [{
+          "PolicyName" : "LabAccess",
+          "PolicyDocument" : {
+            "Statement": [
+                {
+                    "Effect": "Allow",
+                    "Resource": "*",
+                    "Action": [
+                        "ec2:DescribeInstances",
+                        "ec2:GetPasswordData"
+                    ]
+                },
+                {
+                    "Condition": {
+                        "StringEquals": {
+                            "ec2:ResourceTag/Owner": "<%-user.id%>"
+                        }
+                    },
+                    "Effect": "Allow",
+                    "Resource": "*",
+                    "Action": [
+                        "ec2:RebootInstances",
+                        "ec2:DescribeInstanceAttribute",
+                        "ec2:DescribeInstanceStatus"
+                    ]
+                }
+            ]
+          }
+        }]
+      }
+    }

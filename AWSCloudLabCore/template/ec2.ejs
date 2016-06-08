@@ -1,0 +1,108 @@
+"LabMaterialVolume<%-i%>":{
+    "Type":"AWS::EC2::Volume",
+    "Properties":{
+        "SnapshotId": "<%-user.labMaterialSnapshotId%>",
+        "AvailabilityZone":{"Fn::GetAtt":["StudentInstance<%-i%>","AvailabilityZone"]},
+        "Tags":
+        [
+            {
+                "Key": "Name",
+                "Value": "LabMaterial-<%-user.id%>"
+            }
+        ]
+    }
+},
+"LabMaterialMountPoint<%-i%>":{
+    "Type":"AWS::EC2::VolumeAttachment",
+    "DependsOn":["StudentInstance<%-i%>","LabMaterialVolume<%-i%>"],
+    "Properties":{
+        "InstanceId":{"Ref":"StudentInstance<%-i%>"},
+        "VolumeId":{"Ref":"LabMaterialVolume<%-i%>"},
+        "Device":"/dev/sdh"
+    }
+},
+"LabStorageVolume<%-i%>":{
+    "Type":"AWS::EC2::Volume",
+    "DeletionPolicy":"Snapshot",
+    "Properties":{
+        "SnapshotId": "<%-user.labStorageSnapshotId%>",
+        "AvailabilityZone":{"Fn::GetAtt":["StudentInstance<%-i%>","AvailabilityZone"]},
+        "Tags":
+        [
+            {
+                "Key": "Owner",
+                "Value": "<%-user.id%>"
+            },
+            {
+                "Key": "AWSAccount",
+                "Value": "<%-user.awsAccount%>"
+            },
+            {
+                "Key": "Name",
+                "Value": "LabStorage-<%-user.id%>"
+            }
+        ]
+    }
+},
+"LabStorageMountPoint<%-i%>":{
+    "Type":"AWS::EC2::VolumeAttachment",
+    "DependsOn":[
+        "LabMaterialMountPoint<%-i%>",
+        "StudentInstance<%-i%>",
+        "LabStorageVolume<%-i%>"
+    ],
+    "Properties":{"InstanceId":{"Ref":"StudentInstance<%-i%>"},
+    "VolumeId":{"Ref":"LabStorageVolume<%-i%>"},
+    "Device":"/dev/sdg"
+    }
+},
+"StudentInstance<%-i%>":{
+    "Type":"AWS::EC2::Instance",
+    "DependsOn": ["AttachGateway","Ec2KeyPairs"],
+    "Properties":  {
+        "ImageId" : "<%-user.imageId%>",
+        "InstanceType":{"Ref":"InstanceType"},
+        "KeyName": "<%-user.key%>",
+        "Tags":
+        [
+            {
+                "Key": "Application",
+                "Value": {
+                    "Ref": "AWS::StackId"
+                }
+            },
+            {
+                "Key": "Owner",
+                "Value": "<%-user.id%>"
+            },
+            {
+                "Key": "AWSAccount",
+                "Value": "<%-user.awsAccount%>"
+            },
+            {
+                "Key": "Name",
+                "Value": "<%-user.id%>"
+            },
+            {
+                "Key": "IAMUser",
+                "Value": {
+                    "Ref": "CFNUser<%-i%>"
+                }
+            },
+            {
+                "Key": "Password",
+                "Value": "<%-user.password%>"
+            }
+        ],
+        "NetworkInterfaces":
+        [
+            {
+                "GroupSet": [{"Ref": "InstanceSecurityGroup"}],
+                "AssociatePublicIpAddress": "true",
+                "DeviceIndex": "0",
+                "DeleteOnTermination": "true",
+                "SubnetId": {"Ref": "Subnet"}
+            }
+        ]
+    }
+}

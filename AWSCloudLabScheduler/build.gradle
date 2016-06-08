@@ -1,0 +1,34 @@
+group 'awscloudlabscheduler'
+version '1.0'
+
+apply plugin: 'java'
+
+
+buildscript {
+    repositories {
+        jcenter()
+    }
+
+    dependencies {
+        classpath 'eu.appsatori:gradle-fatjar-plugin:0.3'
+    }
+}
+
+apply plugin: 'eu.appsatori.fatjar'
+
+repositories {
+    mavenCentral()
+}
+
+dependencies {
+    compile group: 'joda-time', name: 'joda-time', version: '2.9.3'
+    compile group: 'org.mnode.ical4j', name: 'ical4j',    version: '1.0.7'
+    //compile group: 'com.amazonaws', name: 'aws-java-sdk', version: '1.2.1'
+
+    compile group: 'com.amazonaws', name: 'aws-java-sdk-core', version: '1.11.4'
+
+    compile group: 'com.amazonaws', name: 'aws-lambda-java-core', version: '1.1.0'
+    compile group: 'com.amazonaws', name: 'aws-java-sdk-lambda', version: '1.11.3'
+    compile group: 'com.amazonaws', name: 'aws-java-sdk-dynamodb', version: '1.11.3'
+    testCompile group: 'junit', name: 'junit', version: '4.11'
+}

@@ -1,0 +1,55 @@
+
+,
+    "Ec2KeyPairs": {
+      "Type": "Custom::Ec2KeyPairs",
+      "Properties": {
+        "ServiceToken": { "Fn::GetAtt" : ["deployLambdaWithParams", "Outputs.KeyPairsFunctionArn"] },
+        "KeypairS3Bucket":"<%-labContext.configure.keypairS3Bucket%>",
+        "Keypairs": <%-keyPairs%>
+      }
+    },
+    "EmailLogin": {
+      "Type": "Custom::EmailLogin",
+      "Properties": {
+        "ServiceToken": { "Fn::GetAtt" : ["deployLambdaWithParams", "Outputs.EmailLoginFunctionArn"] },
+        "SenderEmail":"<%-labContext.configure.senderEmail%>",
+        "SesRegion": "<%-labContext.configure.sesRegion%>",
+        "SmtpHost": "<%-labContext.configure.smtpHost%>",
+        "StmpUser": "<%-labContext.configure.stmpUser%>",
+        "SmtpPassword": {"Ref": "SmtpPassword" },
+        "KeyPairsBucket": "<%-labContext.configure.keypairS3Bucket%>"
+      },
+      "DependsOn" : [
+        <% users.forEach(function(user,i){ %>
+          "StudentInstance<%-i%>"
+        <%if (i < users.length - 1) { %>,<% } %>
+        <% }); %>
+        ]
+    },
+
+    "CFNUserGroup": {
+      "Type": "AWS::IAM::Group"
+    },
+    "Users": {
+      "Type": "AWS::IAM::UserToGroupAddition",
+      "Properties": {
+        "GroupName": {
+          "Ref": "CFNUserGroup"
+        },
+        "Users": [
+<% users.forEach(function(user,i){ %>
+          {
+            "Ref": "CFNUser<%-i%>"
+          }
+<%if (i < users.length - 1) { %>,<% } %>
+<% }); %>
+        ]
+      }
+    },
+    <% users.forEach(function(user,i){ %>
+    <%- include('user.ejs', {i: i,user:user}) %>,
+    <% }); %>
+    <% users.forEach(function(user,i){ %>
+    <%- include('ec2.ejs', {i: i,user:user}) %>
+    <%if (i < users.length - 1) { %>,<% } %>
+    <% }); %>

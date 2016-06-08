@@ -1,0 +1,530 @@
+{
+  "AWSTemplateFormatVersion": "2010-09-09",
+  "Description": "AWS Cloud Lab - Lambda Functions",
+  "Parameters": {
+    "SourceBucket": {
+      "Type": "String"
+    },
+    "KeypairsBucket": {
+      "Type": "String"
+    },
+    "UserListBucket": {
+      "Type": "String"
+    }
+  },
+  "Resources": {
+    "AWSCloudLabSchedulerStackExecutionRole": {
+      "Type": "AWS::IAM::Role",
+      "Properties": {
+        "AssumeRolePolicyDocument": {
+          "Version": "2012-10-17",
+          "Statement": [
+            {
+              "Effect": "Allow",
+              "Principal": {
+                "Service": [
+                  "lambda.amazonaws.com"
+                ]
+              },
+              "Action": [
+                "sts:AssumeRole"
+              ]
+            }
+          ]
+        },
+        "Path": "/"
+      }
+    },
+    "AWSCloudLabSchedulerExecutionPolicy": {
+      "DependsOn": [
+        "AWSCloudLabSchedulerStackExecutionRole"
+      ],
+      "Type": "AWS::IAM::Policy",
+      "Properties": {
+        "PolicyName": "AWSCloudLabSchedulerExecutionRolePolicy",
+        "Roles": [
+          {
+            "Ref": "AWSCloudLabSchedulerStackExecutionRole"
+          }
+        ],
+        "PolicyDocument": {
+          "Version": "2012-10-17",
+          "Statement": [
+            {
+              "Effect": "Allow",
+              "Action": [
+                "logs:CreateLogGroup",
+                "logs:CreateLogStream",
+                "logs:PutLogEvents"
+              ],
+              "Resource": "arn:aws:logs:*:*:*"
+            },
+            {
+              "Action": [
+                "lambda:InvokeFunction",
+                "lambda:GetFunctionConfiguration"
+              ],
+              "Resource": "*",
+              "Effect": "Allow"
+            },
+            {
+              "Action": [
+                "dynamodb:Scan",
+                "dynamodb:GetItem",
+                "dynamodb:PutItem",
+                "dynamodb:UpdateItem",
+                "dynamodb:DeleteItem"
+              ],
+              "Resource": [
+                {
+                  "Fn::Join": [
+                    "",
+                    [
+                      "arn:aws:dynamodb:",
+                      {
+                        "Ref": "AWS::Region"
+                      },
+                      ":",
+                      {
+                        "Ref": "AWS::AccountId"
+                      },
+                      ":table/",
+                      "configure"
+                    ]
+                  ]
+                },
+                {
+                  "Fn::Join": [
+                    "",
+                    [
+                      "arn:aws:dynamodb:",
+                      {
+                        "Ref": "AWS::Region"
+                      },
+                      ":",
+                      {
+                        "Ref": "AWS::AccountId"
+                      },
+                      ":table/",
+                      "course"
+                    ]
+                  ]
+                },
+                {
+                  "Fn::Join": [
+                    "",
+                    [
+                      "arn:aws:dynamodb:",
+                      {
+                        "Ref": "AWS::Region"
+                      },
+                      ":",
+                      {
+                        "Ref": "AWS::AccountId"
+                      },
+                      ":table/",
+                      "calendar"
+                    ]
+                  ]
+                },
+                {
+                  "Fn::Join": [
+                    "",
+                    [
+                      "arn:aws:dynamodb:",
+                      {
+                        "Ref": "AWS::Region"
+                      },
+                      ":",
+                      {
+                        "Ref": "AWS::AccountId"
+                      },
+                      ":table/",
+                      "lab"
+                    ]
+                  ]
+                }
+              ],
+              "Effect": "Allow"
+            }
+          ]
+        }
+      }
+    },
+    "AWSCloudLabSchedulerFunction": {
+      "Type": "AWS::Lambda::Function",
+      "DependsOn": [
+        "AWSCloudLabSchedulerStackExecutionRole",
+        "AWSCloudLabSchedulerExecutionPolicy"
+      ],
+      "Properties": {
+        "FunctionName": "AWSCloudLabScheduler",
+        "Description": "AWS Cloud Lab Scheduler",
+        "Code": {
+          "S3Bucket": {
+            "Ref": "SourceBucket"
+          },
+          "S3Key": "awscloudlabscheduler-1.0.jar"
+        },
+        "Role": {
+          "Fn::GetAtt": [
+            "AWSCloudLabSchedulerStackExecutionRole",
+            "Arn"
+          ]
+        },
+        "Timeout": 60,
+        "Handler": "com.cloudlabhk.scheduler.LambdaFunctionHandler",
+        "Runtime": "java8",
+        "MemorySize": 256
+      }
+    },
+    "ScheduledRule": {
+      "Type": "AWS::Events::Rule",
+      "Properties": {
+        "Description": "ScheduledRule",
+        "ScheduleExpression": "cron(0/15 * * * ? *)",
+        "State": "ENABLED",
+        "Targets": [
+          {
+            "Arn": {
+              "Fn::GetAtt": [
+                "AWSCloudLabSchedulerFunction",
+                "Arn"
+              ]
+            },
+            "Id": "TargetFunctionV1"
+          }
+        ]
+      }
+    },
+    "PermissionForEventsToInvokeAWSCloudLabSchedulerLambda": {
+      "Type": "AWS::Lambda::Permission",
+      "Properties": {
+        "FunctionName": {
+          "Ref": "AWSCloudLabSchedulerFunction"
+        },
+        "Action": "lambda:InvokeFunction",
+        "Principal": "events.amazonaws.com",
+        "SourceArn": {
+          "Fn::GetAtt": [
+            "ScheduledRule",
+            "Arn"
+          ]
+        }
+      }
+    },
+    "AWSCloudLabExecutionRole": {
+      "Type": "AWS::IAM::Role",
+      "Properties": {
+        "AssumeRolePolicyDocument": {
+          "Version": "2012-10-17",
+          "Statement": [
+            {
+              "Effect": "Allow",
+              "Principal": {
+                "Service": [
+                  "lambda.amazonaws.com"
+                ]
+              },
+              "Action": [
+                "sts:AssumeRole"
+              ]
+            }
+          ]
+        },
+        "Path": "/"
+      }
+    },
+    "AWSCloudLabExecutionPolicy": {
+      "DependsOn": [
+        "AWSCloudLabExecutionRole"
+      ],
+      "Type": "AWS::IAM::Policy",
+      "Properties": {
+        "PolicyName": "AWSCloudLabBuilderExecutionRolePolicy",
+        "Roles": [
+          {
+            "Ref": "AWSCloudLabExecutionRole"
+          }
+        ],
+        "PolicyDocument": {
+          "Version": "2012-10-17",
+          "Statement": [
+            {
+              "Effect": "Allow",
+              "Action": [
+                "logs:CreateLogGroup",
+                "logs:CreateLogStream",
+                "logs:PutLogEvents"
+              ],
+              "Resource": "arn:aws:logs:*:*:*"
+            },
+            {
+              "Effect": "Allow",
+              "Action": [
+                "cloudformation:CreateStack",
+                "cloudformation:DescribeStacks",
+                "cloudformation:DescribeStackEvents",
+                "cloudformation:DescribeStackResources",
+                "cloudformation:GetTemplate",
+                "cloudformation:ValidateTemplate",
+                "cloudformation:DeleteStack",
+                "cloudformation:ListStacks",
+                "lambda:*",
+                "ec2:*",
+                "events:*",
+                "sns:Publish",
+                "ses:SendEmail",
+                "ses:SendRawEmail"
+              ],
+              "Resource": "*"
+            },
+            {
+              "Sid": "IAMPassRoleForCloudWatchEvents",
+              "Effect": "Allow",
+              "Action": "iam:PassRole",
+              "Resource": "arn:aws:iam::*:role/AWS_Events_Invoke_Targets"
+            },
+            {
+              "Effect": "Allow",
+              "Action": [
+                "s3:PutObject",
+                "s3:GetObject"
+              ],
+              "Resource": [
+                {
+                  "Fn::Join": [
+                    "",
+                    [
+                      "arn:aws:s3:::",
+                      {
+                        "Ref": "SourceBucket"
+                      },
+                      "/*"
+                    ]
+                  ]
+                },
+                {
+                  "Fn::Join": [
+                    "",
+                    [
+                      "arn:aws:s3:::",
+                      {
+                        "Ref": "UserListBucket"
+                      },
+                      "/*"
+                    ]
+                  ]
+                }
+              ]
+            },
+            {
+              "Action": [
+                "dynamodb:GetItem",
+                "dynamodb:PutItem",
+                "dynamodb:UpdateItem",
+                "dynamodb:DeleteItem"
+              ],
+              "Resource": [
+                {
+                  "Fn::Join": [
+                    "",
+                    [
+                      "arn:aws:dynamodb:",
+                      {
+                        "Ref": "AWS::Region"
+                      },
+                      ":",
+                      {
+                        "Ref": "AWS::AccountId"
+                      },
+                      ":table/",
+                      "configure"
+                    ]
+                  ]
+                },
+                {
+                  "Fn::Join": [
+                    "",
+                    [
+                      "arn:aws:dynamodb:",
+                      {
+                        "Ref": "AWS::Region"
+                      },
+                      ":",
+                      {
+                        "Ref": "AWS::AccountId"
+                      },
+                      ":table/",
+                      "course"
+                    ]
+                  ]
+                },
+                {
+                  "Fn::Join": [
+                    "",
+                    [
+                      "arn:aws:dynamodb:",
+                      {
+                        "Ref": "AWS::Region"
+                      },
+                      ":",
+                      {
+                        "Ref": "AWS::AccountId"
+                      },
+                      ":table/",
+                      "calendar"
+                    ]
+                  ]
+                },
+                {
+                  "Fn::Join": [
+                    "",
+                    [
+                      "arn:aws:dynamodb:",
+                      {
+                        "Ref": "AWS::Region"
+                      },
+                      ":",
+                      {
+                        "Ref": "AWS::AccountId"
+                      },
+                      ":table/",
+                      "lab"
+                    ]
+                  ]
+                }
+              ],
+              "Effect": "Allow"
+            },
+            {
+              "Effect": "Allow",
+              "Action": [
+                "iam:*"
+              ],
+              "Resource": "*"
+            }
+          ]
+        }
+      }
+    },
+    "AWSCloudLabBuilderFunction": {
+      "Type": "AWS::Lambda::Function",
+      "DependsOn": [
+        "AWSCloudLabExecutionRole",
+        "AWSCloudLabExecutionPolicy"
+      ],
+      "Properties": {
+        "FunctionName": "AWSCloudLabBuilder",
+        "Description": "AWS Cloud Lab  Builder",
+        "Code": {
+          "S3Bucket": {
+            "Ref": "SourceBucket"
+          },
+          "S3Key": "awscloudlab_latest.zip"
+        },
+        "Role": {
+          "Fn::GetAtt": [
+            "AWSCloudLabExecutionRole",
+            "Arn"
+          ]
+        },
+        "Timeout": 180,
+        "Handler": "createLabLambda.handler",
+        "Runtime": "nodejs4.3",
+        "MemorySize": 256
+      }
+    },
+    "AWSCloudLabTerminatorFunction": {
+      "Type": "AWS::Lambda::Function",
+      "DependsOn": [
+        "AWSCloudLabExecutionRole",
+        "AWSCloudLabExecutionPolicy"
+      ],
+      "Properties": {
+        "FunctionName": "AWSCloudLabTerminator",
+        "Description": "AWS Cloud Lab  Terminator",
+        "Code": {
+          "S3Bucket": {
+            "Ref": "SourceBucket"
+          },
+          "S3Key": "awscloudlab_latest.zip"
+        },
+        "Role": {
+          "Fn::GetAtt": [
+            "AWSCloudLabExecutionRole",
+            "Arn"
+          ]
+        },
+        "Timeout": 180,
+        "Handler": "deleteLabStackLambda.handler",
+        "Runtime": "nodejs4.3",
+        "MemorySize": 128
+      }
+    },
+    "AWSCloudLabEndedLabFunction": {
+      "Type": "AWS::Lambda::Function",
+      "DependsOn": [
+        "AWSCloudLabExecutionRole",
+        "AWSCloudLabExecutionPolicy"
+      ],
+      "Properties": {
+        "FunctionName": "AWSCloudLabEndedLab",
+        "Description": "AWS Cloud Lab  Ended Lab",
+        "Code": {
+          "S3Bucket": {
+            "Ref": "SourceBucket"
+          },
+          "S3Key": "awscloudlab_latest.zip"
+        },
+        "Role": {
+          "Fn::GetAtt": [
+            "AWSCloudLabExecutionRole",
+            "Arn"
+          ]
+        },
+        "Timeout": 180,
+        "Handler": "endedLabStackLambda.handler",
+        "Runtime": "nodejs4.3",
+        "MemorySize": 128
+      }
+    },
+    "PermissionForEventsToInvokeAWSCloudLabEndedLabLambda": {
+      "Type": "AWS::Lambda::Permission",
+      "Properties": {
+        "FunctionName": {
+          "Ref": "AWSCloudLabEndedLabFunction"
+        },
+        "Action": "lambda:InvokeFunction",
+        "Principal": "sns.amazonaws.com",
+        "SourceArn": {
+          "Fn::Join": [
+            "",
+            [
+              "arn:aws:sns:",
+              {
+                "Ref": "AWS::Region"
+              },
+              ":",
+              {
+                "Ref": "AWS::AccountId"
+              },
+              ":AWSCloudLabStackEvent"
+            ]
+          ]
+        }
+      }
+    }
+  },
+  "Outputs": {
+    "AWSCloudLabEndedLabFunctionArn": {
+      "Description": "Lab Group Name",
+      "Value": {
+        "Fn::GetAtt": [
+          "AWSCloudLabEndedLabFunction",
+          "Arn"
+        ]
+      }
+    }
+  }
+}

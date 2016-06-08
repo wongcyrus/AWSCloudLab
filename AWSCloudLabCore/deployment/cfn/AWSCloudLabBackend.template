@@ -1,0 +1,97 @@
+{
+  "AWSTemplateFormatVersion": "2010-09-09",
+  "Description": "AWS Cloud Lab",
+  "Parameters": {
+    "SourceBucket": {
+      "Type": "String"
+    },
+    "KeypairsBucket": {
+      "Type": "String"
+    },
+    "UserListBucket": {
+      "Type": "String"
+    },
+    "DynamoDBStackUrl": {
+      "Type": "String"
+    },
+    "LambdaStackUrl": {
+      "Type": "String"
+    },
+    "S3StackUrl": {
+      "Type": "String"
+    },
+    "SNSStackUrl": {
+      "Type": "String"
+    },
+    "ExpirationInDays": {
+      "Type": "Number"
+    }
+  },
+  "Resources": {
+    "DynamoDBStack": {
+      "Type": "AWS::CloudFormation::Stack",
+      "Properties": {
+        "TemplateURL": {
+          "Ref": "DynamoDBStackUrl"
+        }
+      }
+    },
+    "S3Stack": {
+      "Type": "AWS::CloudFormation::Stack",
+      "Properties": {
+        "TemplateURL": {
+          "Ref": "S3StackUrl"
+        },
+        "Parameters": {
+          "KeypairsBucket": {
+            "Ref": "KeypairsBucket"
+          },
+          "UserListBucket": {
+            "Ref": "UserListBucket"
+          },
+          "ExpirationInDays": {
+            "Ref": "ExpirationInDays"
+          }
+        }
+      }
+    },
+    "LambdaStack": {
+      "Type": "AWS::CloudFormation::Stack",
+      "Properties": {
+        "TemplateURL": {
+          "Ref": "LambdaStackUrl"
+        },
+        "Parameters": {
+          "SourceBucket": {
+            "Ref": "SourceBucket"
+          },
+          "KeypairsBucket": {
+            "Ref": "KeypairsBucket"
+          },
+          "UserListBucket": {
+            "Ref": "UserListBucket"
+          }
+        }
+      }
+    },
+    "SNSStack": {
+      "Type": "AWS::CloudFormation::Stack",
+      "DependsOn": [
+        "LambdaStack"
+      ],
+      "Properties": {
+        "TemplateURL": {
+          "Ref": "SNSStackUrl"
+        },
+        "Parameters": {
+          "AWSCloudLabEndedLabFunctionAnr": {
+            "Fn::GetAtt": [
+              "LambdaStack",
+              "Outputs.AWSCloudLabEndedLabFunctionArn"
+            ]
+          }
+        }
+      }
+    }
+  }
+}

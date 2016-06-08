@@ -1,0 +1,23 @@
+declare -a emails=( <% users.forEach(function(user,i){ %>"<%-user.email%>" <% }); %>)
+
+mkdir data
+curl http://169.254.169.254/latest/meta-data/instance-id  -o instanceid.txt
+    instanceId=`cat instanceid.txt`
+
+driveLetters=(f g h i j k l m n o p)
+driveLetterIndex=0
+for i in "${!volumeIds[@]}"; do
+    driveLetter=${driveLetters[$driveLetterIndex % ${#driveLetters[@]}]}
+    printf "%s\t%s\t%s\t%s\n" "$i" "${volumeIds[$i]}" "${emails[$i]} ${driveLetter}"
+
+    ec2-attach-volume ${volumeIds[$i]} -i $instanceId  -d /dev/sd${driveLetter} --region <%-region%>
+    sleep 10s
+    lsblk
+    mount -t ntfs /dev/sd${driveLetter}1 data
+    aws s3 sync data "s3://<%-labWorkBucket%>/<%-users[0].course.course%>/<%-users[0].lab%>/${emails[$i]}" --region <%-region%> --exclude *RECYCLE.BIN*
+    umount /dev/sd${driveLetter}1
+    ec2-detach-volume ${volumeIds[$i]} --region <%-region%>
+    sleep 5s
+
+    let driveLetterIndex=driveLetterIndex+1
+done

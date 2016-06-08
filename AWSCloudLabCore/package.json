@@ -1,0 +1,49 @@
+{
+  "name": "awscloudlabcore",
+  "version": "0.0.1",
+  "description": "AWS Cloud Lab Core",
+  "dependencies": {
+    "aws-sdk": ">=2.2.8",
+    "cfn-response":">=1.0.1",
+    "consolidate": ">=0.13.1",
+    "ejs": ">=2.3.4",
+    "node-xlsx": ">=0.6.0",
+    "underscore": ">=1.8.3",
+    "async": ">=1.4.2",
+    "fs-extra": ">=0.0.1",
+    "archiver":">=1.0.0",
+    "js-md5":">=0.4.0",
+    "randomstring":">=1.0.0",
+    "mailcomposer": ">=3.9.0",
+    "nodemailer":">=2.3",
+    "s3":">=4.4.0"
+  },
+  "devDependencies": {
+    "aws-sdk": ">=2.0.23",
+    "grunt": ">=0.4.*",
+    "grunt-aws-lambda": ">=0.10.0",
+    "grunt-pack": ">=0.1.5"
+  },
+  "bundleDependencies": [
+    "aws-sdk",
+    "cfn-response",
+    "consolidate",
+    "ejs",
+    "node-xlsx",
+    "underscore",
+    "async",
+    "fs-extra",
+    "archiver",
+    "js-md5",
+    "randomstring",
+    "mailcomposer",
+    "nodemailer",
+    "s3"
+  ],
+  "main": "Gruntfile.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "Cyrus Wong",
+  "license": "MIT"
+}
