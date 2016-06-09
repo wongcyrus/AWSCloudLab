@@ -13,6 +13,7 @@ The main focus of AWS Cloud Lab V2:
 AWS Cloud Lab Environments with Marking Accelerator (V1) has received 
 - Gold Award - Hong Kong ICT Awards 2014: Best Student Invention (College & Undergraduates) Award by Hong Kong Government.
 - APICTA 2015 - Merit Award (Tertiary Student Project)
+- 
 (Marking Accelerator has moved to a new project. )
 
 ##Creator
