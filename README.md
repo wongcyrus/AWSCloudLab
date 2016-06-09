@@ -23,6 +23,8 @@ Mr. Cyrus Wong, R&D Coordinator (Data Scientist & AWS certified Professional) of
 - AWS Certified SysOps Administrator – Associate
 - AWS Certified Developer - Associate
 
+Linkedin 		https://hk.linkedin.com/in/cyruswong
+
 
 
 *_Documentations is in progress_*
