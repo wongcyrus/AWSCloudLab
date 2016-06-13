@@ -1,5 +1,5 @@
 
-,
+    ,
     "Ec2KeyPairs": {
       "Type": "Custom::Ec2KeyPairs",
       "Properties": {
@@ -19,14 +19,44 @@
         "SmtpPassword": {"Ref": "SmtpPassword" },
         "KeyPairsBucket": "<%-labContext.configure.keypairS3Bucket%>"
       },
-      "DependsOn" : [
+    "DependsOn": [
         <% users.forEach(function(user,i){ %>
-          "StudentInstance<%-i%>"
+        "StudentInstance<%-i%>"
         <%if (i < users.length - 1) { %>,<% } %>
         <% }); %>
         ]
     },
-
+    "AWSCloudLabEndLabAmi": {
+        "Type": "Custom::EndLabAMI",
+        "Condition" : "EnLabAmiResources",
+        "DependsOn": [
+<% users.forEach(function(user,i){ %>
+            "StudentInstance<%-i%>"
+<%if (i < users.length - 1) { %>,<% } %>
+<% }); %>
+        ],
+        "Properties": {
+            "ServiceToken": {
+                "Ref": "EndLabAMILambdaArn"
+            },
+            "Lab": "<%-lab%>",
+            "Course": "<%-course%>",
+            "Ec2Instances": [
+<% users.forEach(function(user,i){ %>
+                {
+                "Ref": "StudentInstance<%-i%>"
+                }
+<%if (i < users.length - 1) { %>,<% } %>
+<% }); %>
+            ],
+            "Users": [
+<% users.forEach(function(user,i){ %>
+                "<%-user.id%>"
+<%if (i < users.length - 1) { %>,<% } %>
+<% }); %>
+            ]
+        }
+    },
     "CFNUserGroup": {
       "Type": "AWS::IAM::Group"
     },
@@ -46,6 +76,7 @@
         ]
       }
     },
+
     <% users.forEach(function(user,i){ %>
     <%- include('user.ejs', {i: i,user:user}) %>,
     <% }); %>

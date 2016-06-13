@@ -207,9 +207,16 @@
                             <% } %>
 
                             <% if(typeof imageId != 'undefined'){ %>
-                            <p>You can recover the lab environment with AMI for course <%- course.course %></p>
+                            <p>You can recover the new lab environment with AMI for course <%- course.course %></p>
                             <p>AMI:<%- imageId %></p>
                             <p><a href="<%- imageIdUrl %>"><%- imageIdUrl %></a></p>
+                            <p>and it is shared to your AWS account <%- awsAccountId %> .</p>
+                            <% } %>
+
+                            <% if(typeof endLabAmi != 'undefined'){ %>
+                            <p>You can recover the final lab environment with AMI for course <%- course.course %></p>
+                            <p>AMI:<%- endLabAmi %></p>
+                            <p><a href="<%- endLabImageIdUrl %>"><%- endLabImageIdUrl %></a></p>
                             <p>and it is shared to your AWS account <%- awsAccountId %> .</p>
                             <% } %>
 

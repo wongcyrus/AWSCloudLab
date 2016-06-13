@@ -41,7 +41,8 @@ module.exports.run = configure => {
             "labMaterialSnapshotId": "snap-6edafa53",
             "labStorageSnapshotId": "snap-6edafa53",
             "instanceType": "t2.nano",
-            "share": ["imageId", "labMaterialSnapshotId", "labStorageSnapshotId"]
+            "continue": true,
+            "share": ["imageId", "labMaterialSnapshotId", "labStorageSnapshotId", "endLabAmi"]
         }
     };
     docClient.put(params, pfunc);
@@ -56,7 +57,8 @@ module.exports.run = configure => {
             "labMaterialSnapshotId": "snap-6edafa53",
             "labStorageSnapshotId": "snap-6edafa53",
             "instanceType": "t2.nano",
-            "share": ["imageId", "labMaterialSnapshotId", "labStorageSnapshotId"]
+            "continue": true,
+            "share": ["imageId", "labMaterialSnapshotId", "labStorageSnapshotId", "endLabAmi"]
         }
     };
     docClient.put(params, pfunc);

@@ -25,12 +25,19 @@ grunt.initConfig({
             },
             arn: 'arn:aws:lambda:ap-northeast-1:641280019922:function:AWSCloudLabTerminator'
         },
-        awsCloudLabEndedLab: {
+        awsCloudLabEndLab: {
             options: {
                 region: 'ap-northeast-1',
-                handler: 'endedLabStackLambda.handler'
+                handler: 'endLabStackLambda.handler'
             },
             arn: 'arn:aws:lambda:ap-northeast-1:641280019922:function:AWSCloudLabEndedLab'
+        },
+        awsCloudLabEndLabAMI: {
+            options: {
+                region: 'ap-northeast-1',
+                handler: 'endLabAmisLambda.handler'
+            },
+            arn: 'arn:aws:lambda:ap-northeast-1:641280019922:function:AWSCloudLabEndLabAmi'
         }
     },
     lambda_package: {
@@ -45,9 +52,15 @@ grunt.initConfig({
                 include_time: false,
                 include_version: false
             }
+        },
+        awsCloudLabEndLab: {
+            options: {
+                include_time: false,
+                include_version: false
+            }
         }
         ,
-        awsCloudLabEndedLab: {
+        awsCloudLabEndLabAMI: {
             options: {
                 include_time: false,
                 include_version: false
@@ -58,4 +71,5 @@ grunt.initConfig({
 
 grunt.registerTask('deploy_Builder', ['lambda_package:awsCloudLabBuilder', 'lambda_deploy:awsCloudLabBuilder']);
 grunt.registerTask('deploy_Terminator', ['lambda_package:awsCloudLabTerminator', 'lambda_deploy:awsCloudLabTerminator']);
-grunt.registerTask('deploy_EndedLab', ['lambda_package:awsCloudLabEndedLab', 'lambda_deploy:awsCloudLabEndedLab']);
+grunt.registerTask('deploy_EndLab', ['lambda_package:awsCloudLabEndLab', 'lambda_deploy:awsCloudLabEndLab']);
+grunt.registerTask('deploy_EndLabAMI', ['lambda_package:awsCloudLabEndLabAMI', 'lambda_deploy:awsCloudLabEndLabAMI']);

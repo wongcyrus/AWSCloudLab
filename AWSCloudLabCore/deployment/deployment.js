@@ -8,8 +8,8 @@ const dataSeed = require('./dataSeed');
 const configure = {
     "projectId": "awscloudlab",
     "labRegion": "ap-northeast-1",
-    "userListS3Bucket": "student1.cloudlabhk.com",
-    "keypairS3Bucket": "keypairs1.cloudlabhk.com",
+    "userListS3Bucket": "student2.cloudlabhk.com",
+    "keypairS3Bucket": "keypairs2.cloudlabhk.com",
     "cloudformationS3Bucket": "cloudformation.cloudlabhk.com",
     "labWorkBucket": "labwork.cloudlabhk.com",
     "senderEmail": "noreply@cloudlabhk.com",

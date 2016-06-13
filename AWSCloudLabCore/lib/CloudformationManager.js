@@ -38,6 +38,7 @@ class CloudformationManager {
         let keyPairManager = new KeyPairManager(this.labContext);
         return this._bindTemplate('template/cloudLab.template', {
             users: this.labContext.users,
+            course: this.labContext.users[0].course,
             labContext: this.labContext,
             lab: this.getLabTag(),
             labHash: md5(this.getLabTag()),
@@ -96,6 +97,7 @@ class CloudformationManager {
     }
 
     runCloudformation() {
+        let endLabAmi = this.labContext.course.share.find(x=>x === "endLabAmi") != undefined;
         let params = {
             StackName: this.getLabTag(), /* required */
             Capabilities: [
@@ -108,6 +110,14 @@ class CloudformationManager {
                 {
                     ParameterKey: 'InstanceType',
                     ParameterValue: this.labContext.course.instanceType
+                },
+                {
+                    ParameterKey: 'EndLabAMILambdaArn',
+                    ParameterValue: `arn:aws:lambda:${this.labContext.course.region}:${this.labContext.accountId}:function:AWSCloudLabEndLabAmi`
+                },
+                {
+                    ParameterKey: 'EndLabAMI',
+                    ParameterValue: `${endLabAmi}`
                 },
                 {
                     ParameterKey: 'SmtpPassword',
@@ -131,7 +141,7 @@ class CloudformationManager {
             TemplateBody: this.labContext.template,
             TimeoutInMinutes: 15
         };
-        //console.log(JSON.parse(JSON.stringify(params)));
+
         let cloudformation = new AWS.CloudFormation({
             region: this.labContext.course.region,
             apiVersion: '2010-05-1let5'

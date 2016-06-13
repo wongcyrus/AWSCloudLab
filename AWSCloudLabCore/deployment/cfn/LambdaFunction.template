@@ -443,7 +443,7 @@
       ],
       "Properties": {
         "FunctionName": "AWSCloudLabTerminator",
-        "Description": "AWS Cloud Lab  Terminator",
+        "Description": "AWS Cloud Lab Terminator",
         "Code": {
           "S3Bucket": {
             "Ref": "SourceBucket"
@@ -462,7 +462,7 @@
         "MemorySize": 128
       }
     },
-    "AWSCloudLabEndedLabFunction": {
+    "AWSCloudLabEndLabFunction": {
       "Type": "AWS::Lambda::Function",
       "DependsOn": [
         "AWSCloudLabExecutionRole",
@@ -470,7 +470,7 @@
       ],
       "Properties": {
         "FunctionName": "AWSCloudLabEndedLab",
-        "Description": "AWS Cloud Lab  Ended Lab",
+        "Description": "AWS Cloud Lab End Lab",
         "Code": {
           "S3Bucket": {
             "Ref": "SourceBucket"
@@ -484,16 +484,43 @@
           ]
         },
         "Timeout": 180,
-        "Handler": "endedLabStackLambda.handler",
+        "Handler": "endLabStackLambda.handler",
         "Runtime": "nodejs4.3",
         "MemorySize": 128
       }
     },
-    "PermissionForEventsToInvokeAWSCloudLabEndedLabLambda": {
+    "AWSCloudLabEndLabAmiFunction": {
+      "Type": "AWS::Lambda::Function",
+      "DependsOn": [
+        "AWSCloudLabExecutionRole",
+        "AWSCloudLabExecutionPolicy"
+      ],
+      "Properties": {
+        "FunctionName": "AWSCloudLabEndLabAmi",
+        "Description": "AWS Cloud Lab End Lab AMI",
+        "Code": {
+          "S3Bucket": {
+            "Ref": "SourceBucket"
+          },
+          "S3Key": "awscloudlab_latest.zip"
+        },
+        "Role": {
+          "Fn::GetAtt": [
+            "AWSCloudLabExecutionRole",
+            "Arn"
+          ]
+        },
+        "Timeout": 180,
+        "Handler": "endLabAmisLambda.handler",
+        "Runtime": "nodejs4.3",
+        "MemorySize": 128
+      }
+    },
+    "PermissionForEventsToInvokeAWSCloudLabEndLabLambda": {
       "Type": "AWS::Lambda::Permission",
       "Properties": {
         "FunctionName": {
-          "Ref": "AWSCloudLabEndedLabFunction"
+          "Ref": "AWSCloudLabEndLabFunction"
         },
         "Action": "lambda:InvokeFunction",
         "Principal": "sns.amazonaws.com",
@@ -521,7 +548,7 @@
       "Description": "Lab Group Name",
       "Value": {
         "Fn::GetAtt": [
-          "AWSCloudLabEndedLabFunction",
+          "AWSCloudLabEndLabFunction",
           "Arn"
         ]
       }

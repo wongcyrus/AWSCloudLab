@@ -1,5 +1,5 @@
 {
-  "name": "awscloudlabcore",
+  "name": "awscloudlab",
   "version": "0.0.1",
   "description": "AWS Cloud Lab Core",
   "dependencies": {

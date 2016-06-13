@@ -139,7 +139,30 @@ exports.handler = (event, context, callback) => {
             };
             sharePromises.push(new Promise((resolve, reject)=> {
                     ec2.modifyImageAttribute(params, function (err, data) {
-                        if (err.code === "AuthFailure") {
+                        if (err && err.code === "AuthFailure") {
+                            console.log("AuthFailure cannot share! And, it should be public image.");
+                            resolve(data);
+                        }
+                        if (err) reject(err); // an error occurred
+                        else     resolve(data);           // successful response
+                    });
+                })
+            );
+        }
+
+        if (course.share.find(x=>x === "endLabAmi")) {
+            let params = {
+                ImageId: context.endLabAmi, /* required */
+                Attribute: 'launchPermission',
+                DryRun: false,
+                OperationType: 'add',
+                UserIds: [
+                    context.awsAccountId
+                ]
+            };
+            sharePromises.push(new Promise((resolve, reject)=> {
+                    ec2.modifyImageAttribute(params, function (err, data) {
+                        if (err && err.code === "AuthFailure") {
                             console.log("AuthFailure cannot share! And, it should be public image.");
                             resolve(data);
                         }
@@ -173,6 +196,10 @@ exports.handler = (event, context, callback) => {
         if (course.share.find(x=>x === "imageId")) {
             context.imageId = course.imageId;
             context.imageIdUrl = `https://${region}.console.aws.amazon.com/ec2/v2/home?region=${region}1#Images:visibility=private-images;search=${context.imageId}`;
+        }
+
+        if (course.share.find(x=>x === "endLabAmi")) {
+            context.endLabImageIdUrl = `https://${region}.console.aws.amazon.com/ec2/v2/home?region=${region}#Images:visibility=private-images;imageId=${context.endLabAmi}`;
         }
 
         cons.ejs(__dirname + '/template/endLabEmail.ejs', context)
@@ -215,16 +242,52 @@ exports.handler = (event, context, callback) => {
         return Promise.all(shareables.map(s=> emailManager.sendEmail(s.email, s.course.course + " End Lab Resources", s.emailBody, JSON.stringify(context))));
     }
 
+    let getSharableImageIds = lab => new Promise((resolve, reject)=> {
+        let params = {
+            Filters: [{
+                Name: 'tag:lab', Values: [lab]
+            }]
+        };
+        ec2.describeImages(params, function (err, data) {
+            if (err) reject(err); // an error occurred
+            else {
+                resolve(data.Images.map(c=> {
+                    return {
+                        imageId: c.ImageId,
+                        email: c.Tags.find(p=>p.Key === 'Owner').Value
+                    }
+                }));
+            }
+            // successful response
+        });
+    });
+
     let sharingAndBackup = (studentSnapshots)=> {
+        let lab = studentSnapshots[0].lab, teacher = studentSnapshots[0].teacher, course = studentSnapshots[0].course.course;
         let isValidateAwsAccountId = awsAccountId => (/^\d+$/.test(awsAccountId) && awsAccountId.length == 12);
         let shareableSnapshots = studentSnapshots.filter(s=>isValidateAwsAccountId(s.awsAccountId));
 
-        let sendShareEmails = ()=> Promise.all(shareableSnapshots.map(shareSnapshot))
-            .then(()=> Promise.all(shareableSnapshots.map(bindEmailTemplate)))
-            .then(sendEmails);
+        let sendShareEmails;
+        if (studentSnapshots[0].course.share.find(x=>x === "endLabAmi")) {
+            sendShareEmails = ()=> getSharableImageIds(lab)
+                .then(images=> {
+                    console.log(images);
+                    shareableSnapshots.map(s=> {
+                        s.endLabAmi = images.find(p=>p.email === s.email).imageId;
+                        return s;
+                    });
+                })
+                .then(()=> Promise.all(shareableSnapshots.map(shareSnapshot)))
+                .then(()=> Promise.all(shareableSnapshots.map(bindEmailTemplate)))
+                .then(sendEmails);
+        }
+        else {
+            sendShareEmails = ()=> Promise.all(shareableSnapshots.map(shareSnapshot))
+                .then(()=> Promise.all(shareableSnapshots.map(bindEmailTemplate)))
+                .then(sendEmails);
+        }
 
         let cloudformationManager = new CloudformationManager();
-        let lab = studentSnapshots[0].lab, teacher = studentSnapshots[0].teacher, course = studentSnapshots[0].course.course;
         let backupToS3 = () => bindBackupScriptTemplate(studentSnapshots)
             .then(bindBackupCfnTemplate)
             .then(template=>cloudformationManager.runEndLabCloudformation(lab, teacher, course, template, region));
@@ -237,9 +300,7 @@ exports.handler = (event, context, callback) => {
     if (stackId) {
         console.log("stackId=" + stackId);
         console.log(event.Records[0].Sns);
-        //arn:aws:cloudformation:ap-northeast-1:641280019922:stack/ITP4104LabAcywongvtceduhkStart20160605T083000000ZEnd20160605T090000000Z/fbbf3640-2af7-11e6-ad7a-50d5ca9ff48e
         let stackName = stackId.split("/")[1];
-
         getLab(stackName)
             .then(getCourse)
             .then(c=> {

@@ -7,11 +7,26 @@
       "Type": "String",
       "Default": "m1.small"
     },
+    "EndLabAMILambdaArn": {
+      "Description": "End Lab AMI Lambda ARN",
+      "Type": "String"
+    },
+    "EndLabAMI": {
+      "Description": "End Lab AMI Lambda ARN",
+      "Type": "String",
+      "AllowedValues": [
+        "true",
+        "false"
+      ]
+    },
     "SmtpPassword": {
       "NoEcho": "true",
       "Description": "Smtp Password",
       "Type": "String"
     }
+  },
+  "Conditions" : {
+    "EnLabAmiResources" : {"Fn::Equals" : [{"Ref" : "EndLabAMI"}, "true"]}
   },
   "Resources": {
     "VPC": {
