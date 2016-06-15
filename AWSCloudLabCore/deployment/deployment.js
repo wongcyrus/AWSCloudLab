@@ -8,8 +8,8 @@ const dataSeed = require('./dataSeed');
 const configure = {
     "projectId": "awscloudlab",
     "labRegion": "ap-northeast-1",
-    "userListS3Bucket": "student2.cloudlabhk.com",
-    "keypairS3Bucket": "keypairs2.cloudlabhk.com",
+    "userListS3Bucket": "student1.cloudlabhk.com",
+    "keypairS3Bucket": "keypairs1.cloudlabhk.com",
     "cloudformationS3Bucket": "cloudformation.cloudlabhk.com",
     "labWorkBucket": "labwork.cloudlabhk.com",
     "senderEmail": "noreply@cloudlabhk.com",
@@ -203,9 +203,6 @@ let delay1Min = ()=> delay(1000 * 60);
 packageLambda()
     .then(createSourceAndLabworkBucket())
     .then(uploadLambdaCode)
-    //     .then(console.log)
-    //     .catch(console.err);
-    // uploadLambdaCode()
     .then(createAWSCloudLabStack)
     .then(delay1Min)
     .then(c=> {
@@ -215,7 +212,6 @@ packageLambda()
     .catch(console.error);
 
 //dataSeed.run(configure);
-
 
 
 

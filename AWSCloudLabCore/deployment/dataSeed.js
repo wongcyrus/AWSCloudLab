@@ -38,8 +38,8 @@ module.exports.run = configure => {
             "teacher": "cywong@vtc.edu.hk",
             "region": "ap-northeast-1",
             "imageId": "ami-447a9d25",
-            "labMaterialSnapshotId": "snap-6edafa53",
-            "labStorageSnapshotId": "snap-6edafa53",
+            "labMaterialSnapshotId": "snap-1f62f2f0",
+            "labStorageSnapshotId": "snap-1f62f2f0",
             "instanceType": "t2.nano",
             "continue": true,
             "share": ["imageId", "labMaterialSnapshotId", "labStorageSnapshotId", "endLabAmi"]
@@ -54,8 +54,8 @@ module.exports.run = configure => {
             "teacher": "cywong@vtc.edu.hk",
             "region": "ap-northeast-1",
             "imageId": "ami-447a9d25",
-            "labMaterialSnapshotId": "snap-6edafa53",
-            "labStorageSnapshotId": "snap-6edafa53",
+            "labMaterialSnapshotId": "snap-1f62f2f0",
+            "labStorageSnapshotId": "snap-1f62f2f0",
             "instanceType": "t2.nano",
             "continue": true,
             "share": ["imageId", "labMaterialSnapshotId", "labStorageSnapshotId", "endLabAmi"]

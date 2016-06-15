@@ -6,6 +6,7 @@ const mailcomposer = require("mailcomposer");
 const DynamodbManager = require('./lib/DynamodbManager');
 const CloudformationManager = require('./lib/CloudformationManager');
 const EmailManager = require('./lib/EmailManager');
+const Ec2Manager = require('./lib/Ec2Manager');
 
 const projectId = "awscloudlab";
 
@@ -16,11 +17,8 @@ exports.handler = (event, context, callback) => {
     let region = context.invokedFunctionArn.split(":")[3];
     AWS.config.update({region: region});
 
-    let cloudformation = new AWS.CloudFormation({
-        region: region,
-        apiVersion: '2010-05-1let5'
-    });
-    let ec2 = new AWS.EC2();
+    let ec2Manager = new Ec2Manager();
+    let cloudformationManager = new CloudformationManager();
 
     let getConfigure = ()=> new Promise((resolve, reject)=> {
         console.log("Get Configure");
@@ -47,26 +45,6 @@ exports.handler = (event, context, callback) => {
         );
     });
 
-    let getStackEvents = (stackName, nextToken) => new Promise((resolve, reject)=> {
-        var params = {
-            StackName: stackName
-        };
-        if (nextToken)
-            params.NextToken = nextToken;
-        cloudformation.describeStackEvents(params, function (err, data) {
-            if (err)reject(err, err.stack); // an error occurred
-            else {
-                if (data.NextToken) {
-                    console.log("Inter " + data.StackEvents.length);
-                    getStackEvents(stackName, data.NextToken)
-                        .then(events => resolve(data.StackEvents.concat(events)));
-                } else {
-                    console.log("Final " + data.StackEvents.length);
-                    resolve(data.StackEvents);           // successful response
-                }
-            }
-        });
-    });
 
     let getLabStackId = (message)=> {
         let keypairMap = new Map();
@@ -80,97 +58,23 @@ exports.handler = (event, context, callback) => {
         return undefined;
     }
 
-    let getSnapshots = (snapshotIds)=> new Promise((resolve, reject)=> {
-        let params = {DryRun: false, SnapshotIds: snapshotIds};
-        ec2.describeSnapshots(params, function (err, data) {
-            if (err) reject(err); // an error occurred
-            else    resolve(data);           // successful response
-        });
-    });
 
     let shareSnapshot = context=> new Promise((resolveAll, rejectAll)=> {
+
+        let validToShare = resource =>course.share.find(x=>x === resource) && context[resource] && context[resource] !== "";
         let sharePromises = [];
-        if (course.share.find(x=>x === "labStorageSnapshotId")) {
-            let params = {
-                SnapshotId: context.labStorageSnapshotId, /* required */
-                Attribute: 'createVolumePermission',
-                DryRun: false,
-                OperationType: 'add',
-                UserIds: [
-                    context.awsAccountId
-                ]
-            };
-            sharePromises.push(new Promise((resolve, reject)=> {
-                    ec2.modifySnapshotAttribute(params, function (err, data) {
-                        if (err) reject(err); // an error occurred
-                        else     resolve(data);           // successful response
-                    });
-                })
-            );
+        if (validToShare("labStorageSnapshotId")) {
+            console.log("Share labStorageSnapshotId:" + context.labStorageSnapshotId + " to " + context.awsAccountId);
+            sharePromises.push(ec2Manager.shareSnapshot(context.labStorageSnapshotId, context.awsAccountId));
         }
-        if (course.share.find(x=>x === "labMaterialSnapshotId")) {
-            let params = {
-                SnapshotId: course.labMaterialSnapshotId, /* required */
-                Attribute: 'createVolumePermission',
-                DryRun: false,
-                OperationType: 'add',
-                UserIds: [
-                    context.awsAccountId
-                ]
-            };
-            sharePromises.push(new Promise((resolve, reject)=> {
-                    ec2.modifySnapshotAttribute(params, function (err, data) {
-                        if (err) reject(err); // an error occurred
-                        else     resolve(data);           // successful response
-                    });
-                })
-            );
+        if (validToShare("labMaterialSnapshotId")) {
+            sharePromises.push(ec2Manager.shareSnapshot(context.labMaterialSnapshotId, context.awsAccountId));
         }
-
-        if (course.share.find(x=>x === "imageId")) {
-            let params = {
-                ImageId: course.imageId, /* required */
-                Attribute: 'launchPermission',
-                DryRun: false,
-                OperationType: 'add',
-                UserIds: [
-                    context.awsAccountId
-                ]
-            };
-            sharePromises.push(new Promise((resolve, reject)=> {
-                    ec2.modifyImageAttribute(params, function (err, data) {
-                        if (err && err.code === "AuthFailure") {
-                            console.log("AuthFailure cannot share! And, it should be public image.");
-                            resolve(data);
-                        }
-                        if (err) reject(err); // an error occurred
-                        else     resolve(data);           // successful response
-                    });
-                })
-            );
+        if (validToShare("imageId")) {
+            sharePromises.push(ec2Manager.shareAmi(course.imageId, context.awsAccountId));
         }
-
-        if (course.share.find(x=>x === "endLabAmi")) {
-            let params = {
-                ImageId: context.endLabAmi, /* required */
-                Attribute: 'launchPermission',
-                DryRun: false,
-                OperationType: 'add',
-                UserIds: [
-                    context.awsAccountId
-                ]
-            };
-            sharePromises.push(new Promise((resolve, reject)=> {
-                    ec2.modifyImageAttribute(params, function (err, data) {
-                        if (err && err.code === "AuthFailure") {
-                            console.log("AuthFailure cannot share! And, it should be public image.");
-                            resolve(data);
-                        }
-                        if (err) reject(err); // an error occurred
-                        else     resolve(data);           // successful response
-                    });
-                })
-            );
+        if (validToShare("endLabAmi")) {
+            sharePromises.push(ec2Manager.shareAmi(context.endLabAmi, context.awsAccountId));
         }
         if (sharePromises.length == 0) {
             resolveAll(context);
@@ -212,95 +116,87 @@ exports.handler = (event, context, callback) => {
             });
     });
 
-    let bindBackupScriptTemplate = context => new Promise((resolve, reject)=> {
-        context = {
-            users: context,
-            region: region,
-            labWorkBucket: configure.labWorkBucket
-        }
-        cons.ejs(__dirname + '/template/backupScript.ejs', context)
-            .then((template) => {
-                context.backupScriptLines = template.split("\r\n").map(l=>l.replace(/"/g, '\\"'));
-                resolve(context);
-            })
-            .catch(function (err) {
-                reject(err);
-            });
-    });
-    let bindBackupCfnTemplate = context => new Promise((resolve, reject)=> {
-        cons.ejs(__dirname + '/template/backupLabStorage.template', context)
-            .then((template) => {
-                resolve(template);
-            })
-            .catch(function (err) {
-                reject(err);
-            });
-    });
-
     let sendEmails = shareables => {
         let emailManager = new EmailManager(configure.senderEmail, configure.sesRegion, configure.smtpHost, configure.stmpUser, configure.smtpPassword);
         return Promise.all(shareables.map(s=> emailManager.sendEmail(s.email, s.course.course + " End Lab Resources", s.emailBody, JSON.stringify(context))));
     }
 
-    let getSharableImageIds = lab => new Promise((resolve, reject)=> {
-        let params = {
-            Filters: [{
-                Name: 'tag:lab', Values: [lab]
-            }]
-        };
-        ec2.describeImages(params, function (err, data) {
-            if (err) reject(err); // an error occurred
-            else {
-                resolve(data.Images.map(c=> {
-                    return {
-                        imageId: c.ImageId,
-                        email: c.Tags.find(p=>p.Key === 'Owner').Value
-                    }
-                }));
-            }
-            // successful response
-        });
-    });
 
-    let sharingAndBackup = (studentSnapshots)=> {
-        let lab = studentSnapshots[0].lab, teacher = studentSnapshots[0].teacher, course = studentSnapshots[0].course.course;
+    let sharingAndBackup = (studentResource)=> {
+        let lab = studentResource[0].lab, teacher = studentResource[0].teacher, course = studentResource[0].course.course;
         let isValidateAwsAccountId = awsAccountId => (/^\d+$/.test(awsAccountId) && awsAccountId.length == 12);
-        let shareableSnapshots = studentSnapshots.filter(s=>isValidateAwsAccountId(s.awsAccountId));
+        let shareableResource = studentResource.filter(s=>isValidateAwsAccountId(s.awsAccountId));
 
         let sendShareEmails;
-        if (studentSnapshots[0].course.share.find(x=>x === "endLabAmi")) {
-            sendShareEmails = ()=> getSharableImageIds(lab)
+        if (studentResource[0].course.share.find(x=>x === "endLabAmi")) {
+            sendShareEmails = ()=> ec2Manager.getSharableImageIds(lab)
                 .then(images=> {
                     console.log(images);
-                    shareableSnapshots.map(s=> {
-                        s.endLabAmi = images.find(p=>p.email === s.email).imageId;
-                        return s;
-                    });
+                    if (images.length > 0)
+                        shareableResource.map(s=> {
+                            s.endLabAmi = images.find(p=>p.email === s.email).imageId;
+                            return s;
+                        });
+                    else shareableResource;
                 })
-                .then(()=> Promise.all(shareableSnapshots.map(shareSnapshot)))
-                .then(()=> Promise.all(shareableSnapshots.map(bindEmailTemplate)))
+                .then(()=> Promise.all(shareableResource.map(shareSnapshot)))
+                .then(()=> Promise.all(shareableResource.map(bindEmailTemplate)))
                 .then(sendEmails);
         }
         else {
-            sendShareEmails = ()=> Promise.all(shareableSnapshots.map(shareSnapshot))
-                .then(()=> Promise.all(shareableSnapshots.map(bindEmailTemplate)))
+            sendShareEmails = ()=> Promise.all(shareableResource.map(shareSnapshot))
+                .then(()=> Promise.all(shareableResource.map(bindEmailTemplate)))
                 .then(sendEmails);
         }
 
-        let cloudformationManager = new CloudformationManager();
-        let backupToS3 = () => bindBackupScriptTemplate(studentSnapshots)
-            .then(bindBackupCfnTemplate)
+        console.log("Send back and send email.");
+        let backupToS3 = () => cloudformationManager.bindBackupScriptTemplate(studentResource, region, configure.labWorkBucket)
+            .then(cloudformationManager.bindBackupCfnTemplate)
             .then(template=>cloudformationManager.runEndLabCloudformation(lab, teacher, course, template, region));
         return Promise.all([sendShareEmails(), backupToS3()]);
+
+        return sendShareEmails();
     }
 
     let stackId = getLabStackId(event.Records[0].Sns.Message);
     let IsSnapshotEvent = event => event.ResourceType === 'AWS::EC2::Snapshot' && event.ResourceStatus === 'CREATE_COMPLETE';
+    let IsEc2Event = event => event.ResourceType === 'AWS::EC2::Instance' && event.ResourceStatus === 'CREATE_COMPLETE';
+
+    let getUserFromInstanceTags = events => {
+        return new Promise((resolve, reject)=> {
+            ec2Manager.getInstances(events.filter(IsEc2Event).map(s=>s.PhysicalResourceId))
+                .then(o =>o.Reservations.map(r=>r.Instances).map(r=>r[0].Tags))
+                .then(tags=> tags.map(s=> {
+                    console.log(s);
+                    return {
+                        email: s.find(p=>p.Key === 'Owner').Value,
+                        course: course,
+                        lab: s.find(p=>p.Key === 'lab').Value,
+                        teacher: s.find(p=>p.Key === 'teacher').Value,
+                        awsAccountId: s.find(p=>p.Key === 'AWSAccount').Value
+                    };
+                })).then(users => resolve(users), err=>reject(err));
+        });
+    };
+
+    let getSnapshotIds = events => {
+        return new Promise((resolve, reject)=> {
+            ec2Manager.getSnapshots(events.filter(IsSnapshotEvent).map(s=>s.PhysicalResourceId))
+                .then(c=> c.Snapshots.map(s=> {
+                    return {
+                        labStorageSnapshotId: s.SnapshotId,
+                        email: s.Tags.find(p=>p.Key === 'Owner').Value
+                    };
+                })).then(snapshots => resolve(snapshots), err=>reject(err));
+        });
+    };
+
 
     if (stackId) {
         console.log("stackId=" + stackId);
         console.log(event.Records[0].Sns);
         let stackName = stackId.split("/")[1];
+
         getLab(stackName)
             .then(getCourse)
             .then(c=> {
@@ -309,24 +205,33 @@ exports.handler = (event, context, callback) => {
             })
             .then(c=> {
                 configure = c;
-                return getStackEvents(stackId);
+                return cloudformationManager.getStackEvents(stackId, region);
             })
-            .then(events=> getSnapshots(events.filter(IsSnapshotEvent).map(s=>s.PhysicalResourceId)))
-            .then(c=> c.Snapshots.map(s=> {
-                return {
-                    labStorageSnapshotId: s.SnapshotId,
-                    snapshotId: s.SnapshotId,
-                    email: s.Tags.find(p=>p.Key === 'Owner').Value,
-                    course: course,
-                    lab: s.Tags.find(p=>p.Key === 'lab').Value,
-                    teacher: s.Tags.find(p=>p.Key === 'teacher').Value,
-                    awsAccountId: s.Tags.find(p=>p.Key === 'AWSAccount').Value
-                };
-            }))
+            .then(events=>
+                new Promise((resolveAll, rejectAll)=> {
+                        Promise.all([
+                            getUserFromInstanceTags(events),
+                            getSnapshotIds(events)
+                        ]).then(results => {
+                            console.log("users");
+                            let users = results[0];
+                            let snapshots = results[1];
+                            users = users.map(u=> {
+                                u.labStorageSnapshotId = snapshots.find(p=>p.email === u.email).labStorageSnapshotId;
+                                return u;
+                            })
+                            console.log(users);
+                            resolveAll(users);
+                        }).catch(err => {
+                            rejectAll(err);
+                        })
+                    }
+                ))
             .then(sharingAndBackup)
             .then(message => callback(null, "Done!\n" + message))
             .catch(err=>callback(err));
-    } else {
+    }
+    else {
         callback(null, "Not End Lab Stack!");
     }
 }

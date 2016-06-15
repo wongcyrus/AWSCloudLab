@@ -18,19 +18,17 @@ class UseRepository {
             return s.name === "UserList"
         }).data, 1);
 
-        //TODO: Image ID should support continuing the last lab with student custom AMIS
-        //Let email be the id!
-
         let users = userArray.map(s => {
             let email = s[0].toLocaleLowerCase();
             return {
-                id: email,
+                email: email,
                 password: randomstring.generate({
                     length: 12,
                     charset: 'alphanumeric'
                 }),
-                key: this.keyPairManager.getKeyPairName({id: email}),
-                awsAccount: s[3],
+                key: this.keyPairManager.getKeyPairName({email}),
+                awsAccount: s[2],
+                role: s[1],
                 imageId: this.labContext.course.imageId,
                 labMaterialSnapshotId: this.labContext.course.labMaterialSnapshotId,
                 labStorageSnapshotId: this.labContext.course.labStorageSnapshotId

@@ -1,6 +1,7 @@
 "use strict";
 const AWS = require('aws-sdk');
 const S3Manager = require('./S3Manager');
+const PromiseHelper = require('./PromiseHelper');
 
 class KeyPairManager {
     constructor(labContext) {
@@ -8,15 +9,7 @@ class KeyPairManager {
     }
 
     getKeyPairName(user) {
-        return this.labContext.lab.id + "/" + user.id.toLocaleLowerCase();
-    }
-
-    _parallelGenerate(context, func) {
-        return new Promise((resolve, reject) => {
-            console.log(context);
-            Promise.all(context.map(func))
-                .then(resolve, reject);
-        });
+        return this.labContext.lab.id + "/" + user.email.toLocaleLowerCase();
     }
 
     createKeyPairs(region, keypairS3Bucket, keypairs) {
@@ -41,9 +34,9 @@ class KeyPairManager {
         };
 
         let s3Manager = new S3Manager(region, keypairS3Bucket);
-
-        let createKeyPairs = context =>this._parallelGenerate(context, createKeyPairPromise);
-        let uploadKeysPairs = context =>this._parallelGenerate(context, s3UploadPromise);
+        let promiseHelper = new PromiseHelper();
+        let createKeyPairs = context => promiseHelper.all(context, createKeyPairPromise);
+        let uploadKeysPairs = context => promiseHelper.all(context, s3UploadPromise);
 
         return createKeyPairs(keypairs)
             .then(uploadKeysPairs);
@@ -67,7 +60,8 @@ class KeyPairManager {
                 }
             });
         });
-        let deleteKeyPairs = context =>this._parallelGenerate(context, deleteKeyPairPromise);
+        let promiseHelper = new PromiseHelper();
+        let deleteKeyPairs = context =>promiseHelper.all(context, deleteKeyPairPromise);
 
         return deleteKeyPairs(keypairs);
     }

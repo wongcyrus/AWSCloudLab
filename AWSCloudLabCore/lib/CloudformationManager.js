@@ -16,11 +16,11 @@ class CloudformationManager {
     _bindTemplate(path, context) {
         return new Promise((resolve, reject)=> {
             cons.ejs(path, context)
-                .then((template) => {
+                .then(template => {
                     //console.log(template);
                     resolve(("" + template).replace("////////", ""));
                 })
-                .catch(function (err) {
+                .catch(err=> {
                     reject(err);
                 });
         });
@@ -34,7 +34,7 @@ class CloudformationManager {
         return `${minute} ${hour} * * ? *`;
     }
 
-    createTemplate() {
+    createLabTemplate() {
         let keyPairManager = new KeyPairManager(this.labContext);
         return this._bindTemplate('template/cloudLab.template', {
             users: this.labContext.users,
@@ -47,6 +47,37 @@ class CloudformationManager {
         });
     }
 
+    bindBackupCfnTemplate(context) {
+        //No idea why cannot reference this._bindTemplate!
+        return new Promise((resolve, reject)=> {
+            cons.ejs('template/backupLabStorage.template', context)
+                .then(template => {
+                    resolve(template);
+                })
+                .catch(err=> {
+                    reject(err);
+                });
+        });
+    }
+
+    bindBackupScriptTemplate(context, region, labWorkBucket) {
+        return new Promise((resolve, reject)=> {
+            context = {
+                users: context,
+                region: region,
+                labWorkBucket: labWorkBucket
+            }
+            cons.ejs('template/backupScript.ejs', context)
+                .then(template => {
+                    context.backupScriptLines = template.split("\r\n").map(l=>l.replace(/"/g, '\\"'));
+                    resolve(context);
+                })
+                .catch(err=> {
+                    reject(err);
+                });
+        });
+    }
+
     createDeleteStackLambdaDeploymentPackage() {
         let zipPath = '/tmp/deleteLabStack.zip';
 
@@ -54,7 +85,7 @@ class CloudformationManager {
             console.log("copyDependencies");
             let tempFolder = "/tmp/DeleteStack";
 
-            fs.copy(__dirname + "/../", tempFolder, function (err) {
+            fs.copy(__dirname + "/../", tempFolder, err => {
                 if (err) return reject(err);
                 console.log('Copied node_modules!');
                 resolve();
@@ -147,7 +178,7 @@ class CloudformationManager {
             apiVersion: '2010-05-1let5'
         });
         return new Promise((resolve, reject)=> {
-            cloudformation.createStack(params, function (err, stackData) {
+            cloudformation.createStack(params, (err, stackData)=> {
                 if (err) reject(err); // an error occurred
                 else {
                     console.log(stackData);           // successful
@@ -186,7 +217,7 @@ class CloudformationManager {
         });
 
         return new Promise((resolve, reject)=> {
-            cloudformation.createStack(params, function (err, stackData) {
+            cloudformation.createStack(params, (err, stackData) => {
                 if (err) reject(err); // an error occurred
                 else {
                     console.log(stackData);           // successful
@@ -196,6 +227,33 @@ class CloudformationManager {
         });
     }
 
+    getStackEvents(stackName, region, nextToken) {
+        let _this = this;
+        return new Promise((resolve, reject)=> {
+            var params = {
+                StackName: stackName
+            };
+            if (nextToken)
+                params.NextToken = nextToken;
+            let cloudformation = new AWS.CloudFormation({
+                region: region,
+                apiVersion: '2010-05-1let5'
+            });
+            cloudformation.describeStackEvents(params, (err, data)=> {
+                if (err)reject(err, err.stack); // an error occurred
+                else {
+                    if (data.NextToken) {
+                        console.log("Inter " + data.StackEvents.length);
+                        _this.getStackEvents(stackName, region, data.NextToken)
+                            .then(events => resolve(data.StackEvents.concat(events)));
+                    } else {
+                        console.log("Final " + data.StackEvents.length);
+                        resolve(data.StackEvents);           // successful response
+                    }
+                }
+            });
+        });
+    }
 
     getLabTag() {
         return this.labContext.lab.id.replace(/[^A-Za-z0-9]/g, '');

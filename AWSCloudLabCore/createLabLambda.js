@@ -2,6 +2,7 @@
 const async = require('async');
 const AWS = require('aws-sdk');
 const S3Manager = require('./lib/S3Manager');
+const Ec2Manager = require('./lib/Ec2Manager');
 const DynamodbManager = require('./lib/DynamodbManager');
 const UseRepository = require('./lib/UseRepository');
 const CloudformationManager = require('./lib/CloudformationManager');
@@ -21,10 +22,7 @@ exports.handler = function (event, context, callback) {
 
     createLab(event, context, callback, region, event);
 
-    //Don'tags call success!
-    //http://stackoverflow.com/questions/30739965/querying-dynamodb-with-lambda-does-nothing
-    console.log("Successfully processed " + JSON.stringify(event) + " records.");
-    console.log("Remain: " + context.getRemainingTimeInMillis() + " ms");
+
 };
 
 
@@ -76,6 +74,26 @@ let createLab = function (event, context, callback, region, record) {
             labContext.users = users;
             next(null, labContext);
         }, function (labContext, next) {
+            if (labContext.course.continue) {
+                console.log("Get Last Lab AMI ID.");
+                let ec2Manager = new Ec2Manager();
+                ec2Manager.getEndLabAmisMap(labContext.course.course, labContext.course.teacher).then(
+                    endLabAmiMap => {
+                        console.log(endLabAmiMap);
+                        //The first lab class will not have Image!
+                        if (endLabAmiMap.size > 0) {
+                            labContext.users = labContext.users.map(user => {
+                                user.endLabAmi = endLabAmiMap.get(user.email).imageId;
+                                return user;
+                            });
+                        }
+                        console.log(labContext.users);
+                        next(null, labContext);
+                    }, err => next(err));
+            } else {
+                next(null, labContext)
+            }
+        }, function (labContext, next) {
             console.log("Create Cloudformation Template.");
             let cloudformationManager = new CloudformationManager(labContext);
             let s3Manager = new S3Manager(labContext.course.region, labContext.configure.cloudformationS3Bucket);
@@ -84,7 +102,7 @@ let createLab = function (event, context, callback, region, record) {
                 .then(()=>cloudformationManager.createDeleteStackLambdaDeploymentPackage())
                 .then(lambdaKey=> {
                     console.log(lambdaKey);
-                    return cloudformationManager.createTemplate()
+                    return cloudformationManager.createLabTemplate()
                 })
                 .then(template=> {
                     labContext.template = template;
@@ -108,7 +126,9 @@ let createLab = function (event, context, callback, region, record) {
             console.error(err);
             callback(err);
         }
-        console.log("done!");
+
+        console.log("Successfully processed " + JSON.stringify(event) + " records.");
+        console.log("Remain: " + context.getRemainingTimeInMillis() + " ms");
         callback(null, "Success");
     });
 };

@@ -1,17 +1,3 @@
-"LabMaterialVolume<%-i%>":{
-    "Type":"AWS::EC2::Volume",
-    "Properties":{
-        "SnapshotId": "<%-user.labMaterialSnapshotId%>",
-        "AvailabilityZone":{ "Fn::GetAtt" : [ "Subnet", "AvailabilityZone" ] } ,
-        "Tags":
-        [
-            {
-                "Key": "Name",
-                "Value": "LabMaterial-<%-user.email%>"
-            }
-        ]
-    }
-},
 "LabStorageVolume<%-i%>":{
     "Type":"AWS::EC2::Volume",
     "DeletionPolicy":"Snapshot",
@@ -36,18 +22,26 @@
     }
 },
 
+"LabStorageMountPoint<%-i%>":{
+    "Type":"AWS::EC2::VolumeAttachment",
+    "DependsOn":[
+        "StudentInstance<%-i%>",
+        "LabStorageVolume<%-i%>"
+    ],
+    "Properties":{"InstanceId":{"Ref":"StudentInstance<%-i%>"},
+    "VolumeId":{"Ref":"LabStorageVolume<%-i%>"},
+    "Device":"/dev/sdm"
+    }
+},
+
 "StudentInstance<%-i%>":{
     "Type":"AWS::EC2::Instance",
     "DependsOn": ["AttachGateway","Ec2KeyPairs"],
     "Properties":  {
-        "ImageId" : "<%-user.imageId%>",
+        "ImageId" : "<%-user.endLabAmi%>",
         "InstanceType":{"Ref":"InstanceType"},
         "KeyName": "<%-user.key%>",
         "AvailabilityZone":{ "Fn::GetAtt" : [ "Subnet", "AvailabilityZone" ] } ,
-        "Volumes": [
-            { "VolumeId": {"Ref":"LabStorageVolume<%-i%>"}, "Device": "/dev/sdg" },
-            { "VolumeId": {"Ref":"LabMaterialVolume<%-i%>"}, "Device": "/dev/sdh" }
-        ],
         "Tags":
         [
             {

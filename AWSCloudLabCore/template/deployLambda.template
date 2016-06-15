@@ -103,15 +103,15 @@
           "Fn::Join": [
             "-",
             [
+              "DeleteLabStack",
               {
                 "Ref": "LabHash"
-              },
-              "DeleteFunction"
+              }
             ]
           ]
         },
         "Description": {
-          "Ref": "StackId"
+          "Ref": "Lab"
         },
         "Code": {
           "S3Bucket": {
@@ -284,12 +284,15 @@
           "Fn::Join": [
             "-",
             [
+              "EmailLogin",
               {
                 "Ref": "LabHash"
-              },
-              "EmailLoginFunction"
+              }
             ]
           ]
+        },
+        "Description": {
+          "Ref": "Lab"
         },
         "Code": {
           "S3Bucket": {
@@ -400,12 +403,15 @@
           "Fn::Join": [
             "-",
             [
+              "KeyPairs",
               {
                 "Ref": "LabHash"
-              },
-              "KeyPairsFunction"
+              }
             ]
           ]
+        },
+        "Description": {
+          "Ref": "Lab"
         },
         "Code": {
           "S3Bucket": {

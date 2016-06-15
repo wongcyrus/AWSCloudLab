@@ -28,7 +28,7 @@
     },
     "AWSCloudLabEndLabAmi": {
         "Type": "Custom::EndLabAMI",
-        "Condition" : "EnLabAmiResources",
+        "Condition" : "EndLabAmiResources",
         "DependsOn": [
 <% users.forEach(function(user,i){ %>
             "StudentInstance<%-i%>"
@@ -49,9 +49,17 @@
 <%if (i < users.length - 1) { %>,<% } %>
 <% }); %>
             ],
+            "LabStorageVolumes": [
+<% users.forEach(function(user,i){ %>
+                {
+                "Ref": "LabStorageVolume<%-i%>"
+                }
+<%if (i < users.length - 1) { %>,<% } %>
+<% }); %>
+            ],
             "Users": [
 <% users.forEach(function(user,i){ %>
-                "<%-user.id%>"
+                "<%-user.email%>"
 <%if (i < users.length - 1) { %>,<% } %>
 <% }); %>
             ]
@@ -81,6 +89,10 @@
     <%- include('user.ejs', {i: i,user:user}) %>,
     <% }); %>
     <% users.forEach(function(user,i){ %>
+    <%if (user.endLabAmi) { %>
+    <%- include('ec2Continue.ejs', {i: i,user:user}) %>
+    <% }else{ %>
     <%- include('ec2.ejs', {i: i,user:user}) %>
+    <%}%>
     <%if (i < users.length - 1) { %>,<% } %>
     <% }); %>
