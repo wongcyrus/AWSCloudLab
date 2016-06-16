@@ -73,23 +73,6 @@ module.exports.run = configure => {
             // See: http://docs.aws.amazon.com/AWSJavaScriptSDK/latest/AWS/S3.html#putObject-property
         },
     };
-    let awsS3Client = new AWS.S3({
-        region: configure.region
-    });
-    let options = {
-        s3Client: awsS3Client,
-        // more options available. See API docs below.
-    };
-    let client = s3.createClient(options);
-    let uploader = client.uploadDir(params);
-    uploader.on('error', function (err) {
-        console.error("unable to sync:", err.stack);
-    });
-    uploader.on('progress', function () {
-        console.log("progress", uploader.progressAmount, uploader.progressTotal);
-    });
-    uploader.on('end', function () {
-        console.log("done uploading");
-    });
+   
 }
 
