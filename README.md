@@ -27,7 +27,80 @@ Mr. Cyrus Wong, R&D Coordinator (Data Scientist & AWS certified Professional) of
 Linkedin 		https://hk.linkedin.com/in/cyruswong
 
 
+##How to setup and configure
 
-*_Documentations is in progress_*
+the AWS Cloud Lab Project in Window Platform (All tools are platform independent!)
+
+##Deployment
+
+###Download and Install build tools
+
+AWS CLI
+Node.js 4.4.5
+JDK 8
+Gradle 2.14 - set up path
+Any Git Client
+Build the project
+
+Install grunt 
+npm install -g grunt-cli
+Get the code 
+git clone https://github.com/wongcyrus/AWSCloudLab.git
+Create AWS User attaches with with AdministratorAccess (Since deployment needs to create IAM role!) and get Access Key Pair  and run 
+aws configure 
+Go to \AWSCloudLabCore, and npm update
+Go to \AWSCloudLabCore\deployment, and npm update
+Deployment
+
+Please refer to the next section, update configure in deployment.js, and data seed in dataSeed.js.
+node deployment.js
+(You may need to run it twice as there is a timing issue on creating \AWSCloudLab\AWSCloudLabCore\dist folder! Fix it soon.)
+Please refer to the next section, upload Class Name List to userListS3Bucket. 
+Configuration
+
+##System Configuration - deployment.js
+
+You have to update const configure = {.....}, and it will save to the DynamoDB table "configure".
+- "projectId": "awscloudlab" (Don't change it)
+- "labRegion": "aws region code (Must have Lambda!)" 
+- "userListS3Bucket": "Bucket of Class Name List" 
+- "keypairS3Bucket": "Bucket save all EC2 keypairs"
+- "cloudformationS3Bucket": "Bucket save all Cloudformation and Lambda package"
+- "labWorkBucket": "Save student works"
+- "senderEmail": "system sender email address"
+- "expirationInDays": "Number of day to keep the key pair in KeypairsBucket"
+
+The system Email support 
+SES (Once SES Region is defined, then it will use SES.)
+- "sesRegion": "Your SES Region code"
+SMTP
+- "smtpHost": "SMTP Host"
+- "stmpUser": "SMTP User"
+- "smtpPassword": "SMTP Password"
+
+
+##Course Data
+
+- calendar (Save Teacher's calendar)
+- teacher - Teacher email, and must match course table - teacher.
+- icsUrl - Public Calendar ica uri.
+- course (Save course information, and basic lab server configure.)
+- course - Course Name, and it must match calendar title.
+- teacher -Teacher email, and must match calendar table - teacher.
+- imageId - AMI ID, and it must be in region attribute.
+- instanceType - Instance type that available in region must support VPC.
+- labMaterialSnapshotId - Snapshot ID, and it must be in region attribute. It will not be backup! Teacher uses it to share lab related files to students!
+labStorageSnapshotId - Snapshot ID, and it must be in region attribute. It will backup with snapshot, and share to student, if student provides his AWS Account ID.
+- region - AWS EC2 Region (The original design is to support multiple regions, but now you should always set the same region of the system regsion.)
+continue - true, It will use the end lab ami for the second lab! imageId will only be used in the first lab.
+share - ["imageId", "labMaterialSnapshotId", "labStorageSnapshotId", "endLabAmi"] define what can share to students.
+
+##Class Name List 
+
+3 columns, and please use the sample excel 
+email, role (teacher or student), and awsAccount (Student AWS account number for sharing.)
+
+- FILENAME MUST MATCH COURSE NAME!
+- EXCEL must be XLXS.
  
 
