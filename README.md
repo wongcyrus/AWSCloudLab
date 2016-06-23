@@ -14,8 +14,10 @@ AWS Cloud Lab Environments with Marking Accelerator (V1) has received
 - Gold Award - Hong Kong ICT Awards 2014: Best Student Invention (College & Undergraduates) Award by Hong Kong Government.
 - APICTA 2015 - Merit Award (Tertiary Student Project)
 
-###Project Details and Design:
-https://www.linkedin.com/pulse/aws-cloud-lab-one-more-real-educational-use-case-part-wong?published=u
+###Project Details and Design
+https://www.linkedin.com/pulse/aws-cloud-lab-one-more-real-educational-use-case-part-wong
+###Architecture
+https://www.linkedin.com/pulse/aws-cloud-lab-one-more-real-educational-use-case-part-wong-1
 
 (Marking Accelerator has moved to a new project. )
 
