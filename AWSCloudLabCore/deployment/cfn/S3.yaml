@@ -1,0 +1,30 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Description: AWS Cloud Lab - S3
+Parameters:
+  KeypairsBucket:
+    Type: String
+  UserListBucket:
+    Type: String
+  ExpirationInDays:
+    Type: Number
+Resources:
+  KeypairsS3Bucket:
+    Type: AWS::S3::Bucket
+    DeletionPolicy: Retain
+    Properties:
+      AccessControl: Private
+      BucketName:
+        Ref: KeypairsBucket
+      LifecycleConfiguration:
+        Rules:
+        - Id: DeleteRule
+          Status: Enabled
+          ExpirationInDays:
+            Ref: ExpirationInDays
+  UserListS3Bucket:
+    Type: AWS::S3::Bucket
+    DeletionPolicy: Retain
+    Properties:
+      AccessControl: Private
+      BucketName:
+        Ref: UserListBucket
