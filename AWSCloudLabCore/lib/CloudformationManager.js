@@ -36,7 +36,7 @@ class CloudformationManager {
 
     createLabTemplate() {
         let keyPairManager = new KeyPairManager(this.labContext);
-        return this._bindTemplate('template/cloudLab.template', {
+        return this._bindTemplate('template/cloudLab.yaml', {
             users: this.labContext.users,
             course: this.labContext.users[0].course,
             labContext: this.labContext,
@@ -50,7 +50,7 @@ class CloudformationManager {
     bindBackupCfnTemplate(context) {
         //No idea why cannot reference this._bindTemplate!
         return new Promise((resolve, reject)=> {
-            cons.ejs('template/backupLabStorage.template', context)
+            cons.ejs('template/backupLabStorage.yaml', context)
                 .then(template => {
                     resolve(template);
                 })

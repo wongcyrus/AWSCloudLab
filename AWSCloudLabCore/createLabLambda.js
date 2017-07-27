@@ -98,7 +98,7 @@ let createLab = function (event, context, callback, region, record) {
             let cloudformationManager = new CloudformationManager(labContext);
             let s3Manager = new S3Manager(labContext.course.region, labContext.configure.cloudformationS3Bucket);
 
-            s3Manager.uploadFile("deployLambda.template", 'template/deployLambda.template')
+            s3Manager.uploadFile("deployLambda.yaml", 'template/deployLambda.yaml')
                 .then(()=>cloudformationManager.createDeleteStackLambdaDeploymentPackage())
                 .then(lambdaKey=> {
                     console.log(lambdaKey);
@@ -106,7 +106,7 @@ let createLab = function (event, context, callback, region, record) {
                 })
                 .then(template=> {
                     labContext.template = template;
-                    s3Manager.uploadString(cloudformationManager.getLabTag() + ".template", template);
+                    s3Manager.uploadString(cloudformationManager.getLabTag() + ".yaml", template);
                 })
                 .then(val => next(null, labContext))
                 .catch(err=> next(err, labContext));

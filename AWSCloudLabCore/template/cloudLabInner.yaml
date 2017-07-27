@@ -1,0 +1,74 @@
+
+  Ec2KeyPairs:
+    Type: Custom::Ec2KeyPairs
+    Properties:
+      ServiceToken:
+        Fn::GetAtt:
+        - deployLambdaWithParams
+        - Outputs.KeyPairsFunctionArn
+      KeypairS3Bucket: "<%-labContext.configure.keypairS3Bucket%>"
+      Keypairs: <%-keyPairs%>
+  EmailLogin:
+    Type: Custom::EmailLogin
+    Properties:
+      ServiceToken:
+        Fn::GetAtt:
+        - deployLambdaWithParams
+        - Outputs.EmailLoginFunctionArn
+      SenderEmail: "<%-labContext.configure.senderEmail%>"
+      SesRegion: "<%-labContext.configure.sesRegion%>"
+      SmtpHost: "<%-labContext.configure.smtpHost%>"
+      StmpUser: "<%-labContext.configure.stmpUser%>"
+      SmtpPassword:
+        Ref: SmtpPassword
+      KeyPairsBucket: "<%-labContext.configure.keypairS3Bucket%>"
+    DependsOn:
+#    <% users.forEach(function(user,i){ %>
+    - StudentInstance<%-i%>
+#    <% }); %>
+  AWSCloudLabEndLabAmi:
+    Type: Custom::EndLabAMI
+    Condition: EndLabAmiResources
+    DependsOn:
+#    <% users.forEach(function(user,i){ %>
+    - StudentInstance<%-i%>
+#    <% }); %>
+    - StudentInstance<%-i%>
+    Properties:
+      ServiceToken:
+        Ref: EndLabAMILambdaArn
+      Lab: "<%-lab%>"
+      Course: "<%-course%>"
+      Ec2Instances:
+#    <% users.forEach(function(user,i){ %>
+      - Ref: StudentInstance<%-i%>
+#    <% }); %>
+      LabStorageVolumes:
+#    <% users.forEach(function(user,i){ %>
+      - Ref: LabStorageVolume<%-i%>
+#    <% }); %>
+      Users:
+#    <% users.forEach(function(user,i){ %>
+      - "<%-user.email%>"
+#    <% }); %>
+  CFNUserGroup:
+    Type: AWS::IAM::Group
+  Users:
+    Type: AWS::IAM::UserToGroupAddition
+    Properties:
+      GroupName:
+        Ref: CFNUserGroup
+      Users:
+#    <% users.forEach(function(user,i){ %>
+      - Ref: CFNUser<%-i%>
+#    <% }); %>
+#    <% users.forEach(function(user,i){ %>
+    <%- include('user.yaml', {i: i,user:user}) %>
+#    <% }); %>
+#    <% users.forEach(function(user,i){ %>
+#    <%if (user.endLabAmi) { %>
+    <%- include('ec2Continue.yaml', {i: i,user:user}) %>
+#    <% }else{ %>
+    <%- include('ec2.yaml', {i: i,user:user}) %>
+#    <%}%>
+#    <% }); %>

@@ -8,10 +8,10 @@ const dataSeed = require('./dataSeed');
 const configure = {
     "projectId": "awscloudlab",
     "labRegion": "ap-northeast-1",
-    "userListS3Bucket": "student1.cloudlabhk.com",
-    "keypairS3Bucket": "keypairs1.cloudlabhk.com",
-    "cloudformationS3Bucket": "cloudformation.cloudlabhk.com",
-    "labWorkBucket": "labwork.cloudlabhk.com",
+    "userListS3Bucket": "student2.cloudlabhk.com",
+    "keypairS3Bucket": "keypairs2.cloudlabhk.com",
+    "cloudformationS3Bucket": "cloudformation2.cloudlabhk.com",
+    "labWorkBucket": "labwork2.cloudlabhk.com",
     "senderEmail": "noreply@cloudlabhk.com",
     "sesRegion": "us-east-1",
     "expirationInDays": 180
@@ -105,11 +105,11 @@ let createSourceAndLabworkBucket = ()=>new Promise((resolveAll, rejectAny)=> {
 let uploadLambdaCode = ()=>new Promise((resolve, reject)=> {
     let s3Manager = new S3Manager(configure.labRegion, configure.cloudformationS3Bucket);
     Promise.all([
-        s3Manager.uploadFile("LambdaFunction.template", __dirname + "/cfn/LambdaFunction.template"),
-        s3Manager.uploadFile("DynamoDB.template", __dirname + "/cfn/DynamoDB.template"),
-        s3Manager.uploadFile("AWSCloudLabBackend.template", __dirname + "/cfn/AWSCloudLabBackend.template"),
-        s3Manager.uploadFile("S3.template", __dirname + "/cfn/S3.template"),
-        s3Manager.uploadFile("SNS.template", __dirname + "/cfn/SNS.template"),
+        s3Manager.uploadFile("LambdaFunction.yaml", __dirname + "/cfn/LambdaFunction.yaml"),
+        s3Manager.uploadFile("DynamoDB.yaml", __dirname + "/cfn/DynamoDB.yaml"),
+        s3Manager.uploadFile("AWSCloudLabBackend.yaml", __dirname + "/cfn/AWSCloudLabBackend.yaml"),
+        s3Manager.uploadFile("S3.yaml", __dirname + "/cfn/S3.yaml"),
+        s3Manager.uploadFile("SNS.yaml", __dirname + "/cfn/SNS.yaml"),
         s3Manager.uploadFile(awscloudlabschedulerZip, awscloudlabschedulerZipFilePath),
         s3Manager.uploadFile(awscloudlabschedulerJar, awscloudlabschedulerJarFilePath)
     ]).then(results => {
@@ -145,22 +145,22 @@ let createAWSCloudLabStack = ()=> new Promise((resolve, reject)=> {
             },
             {
                 ParameterKey: 'DynamoDBStackUrl',
-                ParameterValue: `https://s3-${configure.labRegion}.amazonaws.com/${configure.cloudformationS3Bucket}/DynamoDB.template`,
+                ParameterValue: `https://s3-${configure.labRegion}.amazonaws.com/${configure.cloudformationS3Bucket}/DynamoDB.yaml`,
                 UsePreviousValue: true
             },
             {
                 ParameterKey: 'LambdaStackUrl',
-                ParameterValue: `https://s3-${configure.labRegion}.amazonaws.com/${configure.cloudformationS3Bucket}/LambdaFunction.template`,
+                ParameterValue: `https://s3-${configure.labRegion}.amazonaws.com/${configure.cloudformationS3Bucket}/LambdaFunction.yaml`,
                 UsePreviousValue: true
             },
             {
                 ParameterKey: 'S3StackUrl',
-                ParameterValue: `https://s3-${configure.labRegion}.amazonaws.com/${configure.cloudformationS3Bucket}/S3.template`,
+                ParameterValue: `https://s3-${configure.labRegion}.amazonaws.com/${configure.cloudformationS3Bucket}/S3.yaml`,
                 UsePreviousValue: true
             },
             {
                 ParameterKey: 'SNSStackUrl',
-                ParameterValue: `https://s3-${configure.labRegion}.amazonaws.com/${configure.cloudformationS3Bucket}/SNS.template`,
+                ParameterValue: `https://s3-${configure.labRegion}.amazonaws.com/${configure.cloudformationS3Bucket}/SNS.yaml`,
                 UsePreviousValue: true
             },
             {
@@ -176,7 +176,7 @@ let createAWSCloudLabStack = ()=> new Promise((resolve, reject)=> {
                 Value: "AWS Cloud Lab"
             }
         ],
-        TemplateURL: `https://s3-${configure.labRegion}.amazonaws.com/${configure.cloudformationS3Bucket}/AWSCloudLabBackend.template`,
+        TemplateURL: `https://s3-${configure.labRegion}.amazonaws.com/${configure.cloudformationS3Bucket}/AWSCloudLabBackend.yaml`,
         TimeoutInMinutes: 15
     };
     let cloudformation = new AWS.CloudFormation({
