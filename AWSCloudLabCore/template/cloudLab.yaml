@@ -183,7 +183,7 @@ Resources:
   deployLambdaWithParams:
     Type: AWS::CloudFormation::Stack
     Properties:
-      TemplateURL: https://s3-ap-northeast-1.amazonaws.com/cloudformation.cloudlabhk.com/deployLambda.template
+      TemplateURL: https://s3-<%-labContext.configure.labRegion%>.amazonaws.com/<%-labContext.configure.cloudformationS3Bucket%>/deployLambda.yaml
       Parameters:
         LambdaBucket: "<%-labContext.configure.cloudformationS3Bucket%>"
         LambdaBucketKey: "<%-lab%>DeleteStackLambda.zip"

@@ -14,7 +14,7 @@ module.exports.run = configure => {
         } else {
             console.log("Added item:", JSON.stringify(data, null, 2));
         }
-    }
+    };
 
     let params = {
         TableName: "configure",
@@ -37,9 +37,9 @@ module.exports.run = configure => {
             "course": "ITP4104 Lab A",
             "teacher": "cywong@vtc.edu.hk",
             "region": "ap-northeast-1",
-            "imageId": "ami-447a9d25",
-            "labMaterialSnapshotId": "snap-1f62f2f0",
-            "labStorageSnapshotId": "snap-1f62f2f0",
+            "imageId": "ami-d76d77b0",
+            "labMaterialSnapshotId": "snap-017f11db799e495da",
+            "labStorageSnapshotId": "snap-017f11db799e495da",
             "instanceType": "t2.nano",
             "continue": true,
             "share": ["imageId", "labMaterialSnapshotId", "labStorageSnapshotId", "endLabAmi"]
@@ -91,5 +91,5 @@ module.exports.run = configure => {
     uploader.on('end', function () {
         console.log("done uploading");
     });
-}
+};
 
