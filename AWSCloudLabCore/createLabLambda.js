@@ -17,12 +17,9 @@ exports.handler = function (event, context, callback) {
     let region = context.invokedFunctionArn.split(":")[3];
     AWS.config.update({region: region});
     console.log("Current region:" + region);
-
     console.log(event);
 
     createLab(event, context, callback, region, event);
-
-
 };
 
 

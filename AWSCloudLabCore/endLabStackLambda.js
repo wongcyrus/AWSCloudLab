@@ -7,6 +7,7 @@ const DynamodbManager = require('./lib/DynamodbManager');
 const CloudformationManager = require('./lib/CloudformationManager');
 const EmailManager = require('./lib/EmailManager');
 const Ec2Manager = require('./lib/Ec2Manager');
+const S3Manager = require('./lib/S3Manager');
 
 const projectId = "awscloudlab";
 
@@ -56,7 +57,7 @@ exports.handler = (event, context, callback) => {
             return keypairMap.get('StackId');
         }
         return undefined;
-    }
+    };
 
 
     let shareSnapshot = context=> new Promise((resolveAll, rejectAll)=> {
@@ -119,7 +120,7 @@ exports.handler = (event, context, callback) => {
     let sendEmails = shareables => {
         let emailManager = new EmailManager(configure.senderEmail, configure.sesRegion, configure.smtpHost, configure.stmpUser, configure.smtpPassword);
         return Promise.all(shareables.map(s=> emailManager.sendEmail(s.email, s.course.course + " End Lab Resources", s.emailBody, JSON.stringify(context))));
-    }
+    };
 
 
     let sharingAndBackup = (studentResource)=> {
@@ -149,14 +150,11 @@ exports.handler = (event, context, callback) => {
                 .then(sendEmails);
         }
 
-        console.log("Send back and send email.");
-        let backupToS3 = () => cloudformationManager.bindBackupScriptTemplate(studentResource, region, configure.labWorkBucket)
-            .then(cloudformationManager.bindBackupCfnTemplate)
+        console.log("Send back up email.");
+        let backupToS3 = () => cloudformationManager.bindBackupCfnTemplate(studentResource, region, configure.labWorkBucket)
             .then(template=>cloudformationManager.runEndLabCloudformation(lab, teacher, course, template, region));
         return Promise.all([sendShareEmails(), backupToS3()]);
-
-        return sendShareEmails();
-    }
+    };
 
     let stackId = getLabStackId(event.Records[0].Sns.Message);
     let IsSnapshotEvent = event => event.ResourceType === 'AWS::EC2::Snapshot' && event.ResourceStatus === 'CREATE_COMPLETE';
@@ -234,7 +232,7 @@ exports.handler = (event, context, callback) => {
     else {
         callback(null, "Not End Lab Stack!");
     }
-}
+};
 
 
 

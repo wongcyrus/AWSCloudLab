@@ -16,7 +16,7 @@ exports.handler = (event, context, callback) => {
             console.log("Delay for " + ms + "ms.");
             setTimeout(resolve, ms); // (A)
         });
-    }
+    };
     let delay1Min = ()=> delay(1000 * 60);
 
     if (event.RequestType === 'Delete') {
@@ -61,4 +61,4 @@ exports.handler = (event, context, callback) => {
         response.send(event, context, response.SUCCESS);
         callback(null, "Do Nothing! EndLab Ami");
     }
-}
+};

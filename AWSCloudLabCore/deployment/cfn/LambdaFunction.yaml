@@ -243,7 +243,7 @@ Resources:
     - AWSCloudLabExecutionPolicy
     Properties:
       FunctionName: AWSCloudLabBuilder
-      Description: AWS Cloud Lab  Builder
+      Description: AWS Cloud Lab Builder
       Code:
         S3Bucket:
           Ref: SourceBucket
@@ -255,7 +255,7 @@ Resources:
       Timeout: 180
       Handler: createLabLambda.handler
       Runtime: nodejs4.3
-      MemorySize: 256
+      MemorySize: 512
   AWSCloudLabTerminatorFunction:
     Type: AWS::Lambda::Function
     DependsOn:

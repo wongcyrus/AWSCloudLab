@@ -25,7 +25,7 @@ class UseRepository {
                 password: randomstring.generate({
                     length: 12,
                     charset: 'alphanumeric'
-                }),
+                }) + "@1Aws",
                 key: this.keyPairManager.getKeyPairName({email}),
                 awsAccount: s[2],
                 role: s[1],

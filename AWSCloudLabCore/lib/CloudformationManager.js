@@ -14,13 +14,13 @@ class CloudformationManager {
     }
 
     _bindTemplate(path, context) {
-        return new Promise((resolve, reject)=> {
+        return new Promise((resolve, reject) => {
             cons.ejs(path, context)
                 .then(template => {
                     //console.log(template);
-                    resolve(("" + template).replace("////////", ""));
+                    resolve("" + template);
                 })
-                .catch(err=> {
+                .catch(err => {
                     reject(err);
                 });
         });
@@ -47,32 +47,19 @@ class CloudformationManager {
         });
     }
 
-    bindBackupCfnTemplate(context) {
+    bindBackupCfnTemplate(context, region, labWorkBucket) {
+        context = {
+            users: context,
+            region: region,
+            labWorkBucket: labWorkBucket
+        };
         //No idea why cannot reference this._bindTemplate!
-        return new Promise((resolve, reject)=> {
+        return new Promise((resolve, reject) => {
             cons.ejs('template/backupLabStorage.yaml', context)
                 .then(template => {
                     resolve(template);
                 })
-                .catch(err=> {
-                    reject(err);
-                });
-        });
-    }
-
-    bindBackupScriptTemplate(context, region, labWorkBucket) {
-        return new Promise((resolve, reject)=> {
-            context = {
-                users: context,
-                region: region,
-                labWorkBucket: labWorkBucket
-            }
-            cons.ejs('template/backupScript.ejs', context)
-                .then(template => {
-                    context.backupScriptLines = template.split("\r\n").map(l=>l.replace(/"/g, '\\"'));
-                    resolve(context);
-                })
-                .catch(err=> {
+                .catch(err => {
                     reject(err);
                 });
         });
@@ -81,7 +68,7 @@ class CloudformationManager {
     createDeleteStackLambdaDeploymentPackage() {
         let zipPath = '/tmp/deleteLabStack.zip';
 
-        let copyDependencies = () => new Promise((resolve, reject)=> {
+        let copyDependencies = () => new Promise((resolve, reject) => {
             console.log("copyDependencies");
             let tempFolder = "/tmp/DeleteStack";
 
@@ -92,7 +79,7 @@ class CloudformationManager {
             });
         });
 
-        let zipDeployment = () => new Promise((resolve, reject)=> {
+        let zipDeployment = () => new Promise((resolve, reject) => {
             console.log("zipDeployment");
 
             let zipFile = new ZipFile({
@@ -104,13 +91,13 @@ class CloudformationManager {
         });
         let s3Manager = new S3Manager(this.labContext.course.region, this.labContext.configure.cloudformationS3Bucket);
 
-        let getFileSizeInMegabytes = (filename)=> {
+        let getFileSizeInMegabytes = (filename) => {
             let stats = fs.statSync(filename);
             let fileSizeInBytes = stats["size"];
             return fileSizeInBytes / 1000000.0
-        }
+        };
 
-        return new Promise((resolve, reject)=> {
+        return new Promise((resolve, reject) => {
             copyDependencies()
                 .then(zipDeployment)
                 .then(() => {
@@ -118,7 +105,7 @@ class CloudformationManager {
                     let key = this.getLabTag() + "DeleteStackLambda.zip";
                     return s3Manager.uploadFile(key, zipPath);
                 })
-                .then(key=>resolve(key))
+                .then(key => resolve(key))
                 .catch(err => {
                     console.error(err);
                     reject(err);
@@ -128,7 +115,7 @@ class CloudformationManager {
     }
 
     runCloudformation() {
-        let endLabAmi = this.labContext.course.share.find(x=>x === "endLabAmi") != undefined;
+        let endLabAmi = this.labContext.course.share.find(x => x === "endLabAmi") != undefined;
         let params = {
             StackName: this.getLabTag(), /* required */
             Capabilities: [
@@ -177,8 +164,8 @@ class CloudformationManager {
             region: this.labContext.course.region,
             apiVersion: '2010-05-1let5'
         });
-        return new Promise((resolve, reject)=> {
-            cloudformation.createStack(params, (err, stackData)=> {
+        return new Promise((resolve, reject) => {
+            cloudformation.createStack(params, (err, stackData) => {
                 if (err) reject(err); // an error occurred
                 else {
                     console.log(stackData);           // successful
@@ -208,7 +195,7 @@ class CloudformationManager {
                     Value: course
                 }
             ],
-            TemplateBody: template.replace("////////", ""),
+            TemplateBody: template,
             TimeoutInMinutes: 15
         };
         let cloudformation = new AWS.CloudFormation({
@@ -216,9 +203,14 @@ class CloudformationManager {
             apiVersion: '2010-05-1let5'
         });
 
-        return new Promise((resolve, reject)=> {
+        return new Promise((resolve, reject) => {
             cloudformation.createStack(params, (err, stackData) => {
-                if (err) reject(err); // an error occurred
+                if (err) {
+                    console.error("runEndLabCloudformation Error");
+                    console.error(params);
+                    console.error(template);
+                    reject(err);
+                } // an error occurred
                 else {
                     console.log(stackData);           // successful
                     resolve(stackData.StackId);
@@ -229,7 +221,7 @@ class CloudformationManager {
 
     getStackEvents(stackName, region, nextToken) {
         let _this = this;
-        return new Promise((resolve, reject)=> {
+        return new Promise((resolve, reject) => {
             var params = {
                 StackName: stackName
             };
@@ -239,8 +231,8 @@ class CloudformationManager {
                 region: region,
                 apiVersion: '2010-05-1let5'
             });
-            cloudformation.describeStackEvents(params, (err, data)=> {
-                if (err)reject(err, err.stack); // an error occurred
+            cloudformation.describeStackEvents(params, (err, data) => {
+                if (err) reject(err, err.stack); // an error occurred
                 else {
                     if (data.NextToken) {
                         console.log("Inter " + data.StackEvents.length);
@@ -259,4 +251,5 @@ class CloudformationManager {
         return this.labContext.lab.id.replace(/[^A-Za-z0-9]/g, '');
     }
 }
+
 module.exports = CloudformationManager;

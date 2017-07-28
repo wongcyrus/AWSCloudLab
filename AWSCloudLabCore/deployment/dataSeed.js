@@ -38,8 +38,8 @@ module.exports.run = configure => {
             "teacher": "cywong@vtc.edu.hk",
             "region": "ap-northeast-1",
             "imageId": "ami-d76d77b0",
-            "labMaterialSnapshotId": "snap-017f11db799e495da",
-            "labStorageSnapshotId": "snap-017f11db799e495da",
+            "labMaterialSnapshotId": "snap-0e5811ac573f45c2b",
+            "labStorageSnapshotId": "snap-0e5811ac573f45c2b",
             "instanceType": "t2.nano",
             "continue": true,
             "share": ["imageId", "labMaterialSnapshotId", "labStorageSnapshotId", "endLabAmi"]
