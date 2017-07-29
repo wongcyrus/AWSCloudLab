@@ -15,7 +15,7 @@ let configure;
 let course;
 
 exports.handler = (event, context, callback) => {
-    let region = context.invokedFunctionArn.split(":")[3];
+    let region = process.env.AWS_REGION;
     AWS.config.update({region: region});
 
     let ec2Manager = new Ec2Manager();
@@ -77,7 +77,7 @@ exports.handler = (event, context, callback) => {
         if (validToShare("endLabAmi")) {
             sharePromises.push(ec2Manager.shareAmi(context.endLabAmi, context.awsAccountId));
         }
-        if (sharePromises.length == 0) {
+        if (sharePromises.length === 0) {
             resolveAll(context);
         } else {
             Promise.all(sharePromises)
@@ -91,7 +91,7 @@ exports.handler = (event, context, callback) => {
 
         context.labWorkBucket = configure.labWorkBucket;
         context.labStorageSnapshotUrl = `https://${region}.console.aws.amazon.com/ec2/v2/home?region=${region}#Snapshots:visibility=private;search=${context.labStorageSnapshotId}`;
-        if (course.share.find(x=>x === "labStorageSnapshotId") == undefined) {
+        if (course.share.find(x => x === "labStorageSnapshotId") === undefined) {
             context.labStorageSnapshotId = undefined;
         }
         if (course.share.find(x=>x === "labMaterialSnapshotId")) {
@@ -112,7 +112,7 @@ exports.handler = (event, context, callback) => {
                 context.emailBody = template;
                 resolve(context);
             })
-            .catch(function (err) {
+            .catch((err) => {
                 reject(err);
             });
     });
@@ -125,7 +125,7 @@ exports.handler = (event, context, callback) => {
 
     let sharingAndBackup = (studentResource)=> {
         let lab = studentResource[0].lab, teacher = studentResource[0].teacher, course = studentResource[0].course.course;
-        let isValidateAwsAccountId = awsAccountId => (/^\d+$/.test(awsAccountId) && awsAccountId.length == 12);
+        let isValidateAwsAccountId = awsAccountId => (/^\d+$/.test(awsAccountId) && awsAccountId.length === 12);
         let shareableResource = studentResource.filter(s=>isValidateAwsAccountId(s.awsAccountId));
 
         let sendShareEmails;
@@ -217,7 +217,7 @@ exports.handler = (event, context, callback) => {
                             users = users.map(u=> {
                                 u.labStorageSnapshotId = snapshots.find(p=>p.email === u.email).labStorageSnapshotId;
                                 return u;
-                            })
+                            });
                             console.log(users);
                             resolveAll(users);
                         }).catch(err => {

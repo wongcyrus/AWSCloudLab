@@ -6,7 +6,7 @@ const PromiseHelper = require('./lib/PromiseHelper');
 
 exports.handler = (event, context, callback) => {
     console.log(event);
-    let region = context.invokedFunctionArn.split(":")[3];
+    let region = process.env.AWS_REGION;
     AWS.config.update({region: region});
     let ec2Manager = new Ec2Manager();
     let promiseHelper = new PromiseHelper();

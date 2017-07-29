@@ -1,9 +1,9 @@
 "use strict";
 const AWS = require('aws-sdk');
 
-exports.handler = function (event, context, callback) {
+exports.handler = (event, context, callback) => {
 
-    let region = context.invokedFunctionArn.split(":")[3];
+    let region = process.env.AWS_REGION;
     AWS.config.update({region: region});
     console.log(event);
     
@@ -17,7 +17,7 @@ exports.handler = function (event, context, callback) {
             StackName: event.stackId
         };
         //Cannot wait for the result as it this lambda will block the delete Stack!
-        cloudformation.deleteStack(params, function (err, data) {
+        cloudformation.deleteStack(params, (err, data) => {
             if (err) reject(err); // an error occurred
         });
         resolve();

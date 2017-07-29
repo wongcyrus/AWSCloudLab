@@ -82,13 +82,13 @@ module.exports.run = configure => {
     };
     let client = s3.createClient(options);
     let uploader = client.uploadDir(params);
-    uploader.on('error', function (err) {
+    uploader.on('error', (err) => {
         console.error("unable to sync:", err.stack);
     });
-    uploader.on('progress', function () {
+    uploader.on('progress', () => {
         console.log("progress", uploader.progressAmount, uploader.progressTotal);
     });
-    uploader.on('end', function () {
+    uploader.on('end', () => {
         console.log("done uploading");
     });
 };

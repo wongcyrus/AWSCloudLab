@@ -14,11 +14,11 @@ class UseRepository {
 
     getAll() {
         let userExcel = xlsx.parse(this.filePathname); // parses a file
-        let userArray = _.rest(_.find(userExcel, function (s) {
+        let userArray = _.rest(_.find(userExcel, (s) => {
             return s.name === "UserList"
         }).data, 1);
 
-        let users = userArray.map(s => {
+        return userArray.map(s => {
             let email = s[0].toLocaleLowerCase();
             return {
                 email: email,
@@ -34,7 +34,6 @@ class UseRepository {
                 labStorageSnapshotId: this.labContext.course.labStorageSnapshotId
             };
         });
-        return users;
     }
 }
 

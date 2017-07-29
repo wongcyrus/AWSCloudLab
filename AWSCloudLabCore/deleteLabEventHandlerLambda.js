@@ -2,8 +2,8 @@
 const AWS = require('aws-sdk');
 //It can be simplify once Lambda can be tagged!
 
-exports.handler = function (event, context, callback) {
-    let region = context.invokedFunctionArn.split(":")[3];
+exports.handler = (event, context, callback) => {
+    let region = process.env.AWS_REGION;
     AWS.config.update({region: region});
     console.log("Current region:" + region);
 
@@ -21,7 +21,7 @@ exports.handler = function (event, context, callback) {
             FunctionName: 'AWSCloudLabTerminator', /* required */
             InvokeArgs: JSON.stringify({stackId})
         };
-        lambda.invokeAsync(params, function (err, data) {
+        lambda.invokeAsync(params, (err, data) => {
             if (err) callback(err, null); // an error occurred
             else    callback(null, data);           // successful response
         });

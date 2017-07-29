@@ -12,9 +12,9 @@ const projectId = "awscloudlab",
     courseTableName = "course",
     configureTableName = "configure";
 
-exports.handler = function (event, context, callback) {
+exports.handler = (event, context, callback) => {
     //Get the region of Lambda runtime.
-    let region = context.invokedFunctionArn.split(":")[3];
+    let region = process.env.AWS_REGION;
     AWS.config.update({region: region});
     console.log("Current region:" + region);
     console.log(event);
@@ -23,7 +23,7 @@ exports.handler = function (event, context, callback) {
 };
 
 
-let createLab = function (event, context, callback, region, record) {
+let createLab = (event, context, callback, region, record) => {
 
     let lab = record;//attr.unwrap(record.dynamodb.NewImage);
     console.log(lab);
@@ -31,14 +31,14 @@ let createLab = function (event, context, callback, region, record) {
     let dynamodbManager = new DynamodbManager(region);
 
     async.waterfall([
-        function (next) {
+        (next) => {
             console.log("Get Configure");
             dynamodbManager.getItem(configureTableName, {projectId}).then(
                 data => next(null, data),
                 err => next(err)
             );
         },
-        function (configure, next) {
+        (configure, next) => {
             console.log("Get Course");
             dynamodbManager.getItem(courseTableName, {course: lab.course, teacher: lab.teacher}).then(
                 data => next(null, {
@@ -49,7 +49,7 @@ let createLab = function (event, context, callback, region, record) {
                 err => next(err)
             );
         },
-        function (labContext, next) {
+        (labContext, next) => {
             console.log("Download Student List Excel from S3");
             console.log(labContext);
 
@@ -57,12 +57,12 @@ let createLab = function (event, context, callback, region, record) {
             let filePathname = "/tmp/" + filename;
 
             let s3Manager = new S3Manager(labContext.course.region, labContext.configure.userListS3Bucket);
-            s3Manager.getObject(filename, filePathname).then(()=> {
+            s3Manager.getObject(filename, filePathname).then(() => {
                 console.log('all writes are now complete.' + filePathname);
                 next(null, labContext, filePathname);
             }, err => next(err));
 
-        }, function (labContext, filePathname, next) {
+        }, (labContext, filePathname, next) => {
             console.log("Get User List from Excel");
             labContext.lab = lab;
             let useRepository = new UseRepository(filePathname, labContext);
@@ -70,7 +70,7 @@ let createLab = function (event, context, callback, region, record) {
             console.log(JSON.parse(JSON.stringify(users)));
             labContext.users = users;
             next(null, labContext);
-        }, function (labContext, next) {
+        }, (labContext, next) => {
             if (labContext.course.continue) {
                 console.log("Get Last Lab AMI ID.");
                 let ec2Manager = new Ec2Manager();
@@ -90,35 +90,35 @@ let createLab = function (event, context, callback, region, record) {
             } else {
                 next(null, labContext)
             }
-        }, function (labContext, next) {
+        }, (labContext, next) => {
             console.log("Create Cloudformation Template.");
             let cloudformationManager = new CloudformationManager(labContext);
             let s3Manager = new S3Manager(labContext.course.region, labContext.configure.cloudformationS3Bucket);
 
             s3Manager.uploadFile("deployLambda.yaml", 'template/deployLambda.yaml')
-                .then(()=>cloudformationManager.createDeleteStackLambdaDeploymentPackage())
-                .then(lambdaKey=> {
+                .then(() => cloudformationManager.createDeleteStackLambdaDeploymentPackage())
+                .then(lambdaKey => {
                     console.log(lambdaKey);
                     return cloudformationManager.createLabTemplate()
                 })
-                .then(template=> {
+                .then(template => {
                     labContext.template = template;
                     s3Manager.uploadString(cloudformationManager.getLabTag() + ".yaml", template);
                 })
                 .then(val => next(null, labContext))
-                .catch(err=> next(err, labContext));
+                .catch(err => next(err, labContext));
         },
-        function (labContext, next) {
+        (labContext, next) => {
             console.log("Run Cloudformation");
             let cloudformationManager = new CloudformationManager(labContext);
 
             cloudformationManager.runCloudformation()
-                .then(stackId=> {
+                .then(stackId => {
                     labContext.stackId = stackId;
                     next(null, labContext)
-                }, err=>next(err, null));
+                }, err => next(err, null));
         }
-    ], function (err, result) {
+    ], (err, result) => {
         if (err) {
             console.error(err);
             callback(err);

@@ -5,31 +5,31 @@ const AWS = require('aws-sdk');
 const S3Manager = require('./../lib/S3Manager');
 const dataSeed = require('./dataSeed');
 
-const configure = {
-    "projectId": "awscloudlab",
-    "labRegion": "ap-northeast-1",
-    "userListS3Bucket": "student2.cloudlabhk.com",
-    "keypairS3Bucket": "keypairs2.cloudlabhk.com",
-    "cloudformationS3Bucket": "cloudformation2.cloudlabhk.com",
-    "labWorkBucket": "labwork2.cloudlabhk.com",
-    "senderEmail": "noreply@cloudlabhk.com",
-    "sesRegion": "us-east-1",
-    "expirationInDays": 180
-};
-
 // const configure = {
 //     "projectId": "awscloudlab",
 //     "labRegion": "ap-northeast-1",
-//     "userListS3Bucket": "student1.cloudlabhk.com",
-//     "keypairS3Bucket": "keypairs1.cloudlabhk.com",
-//     "cloudformationS3Bucket": "cloudformation.cloudlabhk.com",
-//     "labWorkBucket": "labwork.cloudlabhk.com",
-//     "senderEmail": "cy.gdoc@gmail.com",
-//     "smtpHost": "smtp.gmail.com",
-//     "stmpUser": "cy.gdoc@gmail.com",
-//     "smtpPassword": "ocykwucfsiwvcadh",
+//     "userListS3Bucket": "student2.cloudlabhk.com",
+//     "keypairS3Bucket": "keypairs2.cloudlabhk.com",
+//     "cloudformationS3Bucket": "cloudformation2.cloudlabhk.com",
+//     "labWorkBucket": "labwork2.cloudlabhk.com",
+//     "senderEmail": "noreply@cloudlabhk.com",
+//     "sesRegion": "us-east-1",
 //     "expirationInDays": 180
 // };
+
+const configure = {
+    "projectId": "awscloudlab",
+    "labRegion": "ap-northeast-1",
+    "userListS3Bucket": "student4.cloudlabhk.com",
+    "keypairS3Bucket": "keypairs4.cloudlabhk.com",
+    "cloudformationS3Bucket": "cloudformation2.cloudlabhk.com",
+    "labWorkBucket": "labwork3.cloudlabhk.com",
+    "senderEmail": "cloudlabaws@gmail.com",
+    "smtpHost": "smtp.gmail.com",
+    "stmpUser": "cloudlabaws@gmail.com",
+    "smtpPassword": "39282662",
+    "expirationInDays": 180
+};
 
 AWS.config.update({region: configure.labRegion});
 
@@ -38,7 +38,7 @@ let awscloudlabschedulerZip = "awscloudlab_latest.zip";
 let awscloudlabschedulerJarFilePath = __dirname + '/../dist/' + awscloudlabschedulerJar;
 let awscloudlabschedulerZipFilePath = __dirname + '/../dist/' + awscloudlabschedulerZip;
 
-let runCommand = (cmd, workingDir) => new Promise((resolve, reject)=> {
+let runCommand = (cmd, workingDir) => new Promise((resolve, reject) => {
     exec(cmd, {cwd: workingDir}, (error, stdout, stderr) => {
         if (error) {
             console.log(`stderr: ${stderr}`);
@@ -50,10 +50,10 @@ let runCommand = (cmd, workingDir) => new Promise((resolve, reject)=> {
         resolve(cmd + `\nstdout:\n ${stdout}`);
     });
 });
-let packageLambdaZip = ()=>runCommand('grunt --gruntfile Gruntfile.js lambda_package:awsCloudLabBuilder', __dirname + '/../');
-let runGradleFatJar = ()=>runCommand('gradle fatJar', __dirname + '/../../AWSCloudLabScheduler');
+let packageLambdaZip = () => runCommand('grunt --gruntfile Gruntfile.js lambda_package:awsCloudLabBuilder', __dirname + '/../');
+let runGradleFatJar = () => runCommand('gradle fatJar', __dirname + '/../../AWSCloudLabScheduler');
 
-let copyFatJar = () => new Promise((resolve, reject)=> {
+let copyFatJar = () => new Promise((resolve, reject) => {
     let source = __dirname + '/../../AWSCloudLabScheduler/build/libs/awscloudlabscheduler-1.0.jar';
     fs.copy(source, awscloudlabschedulerJarFilePath, {replace: true}, (err) => {
         if (err) {
@@ -63,7 +63,7 @@ let copyFatJar = () => new Promise((resolve, reject)=> {
     });
 });
 
-let packageLambda = ()=>new Promise((resolve, reject)=> {
+let packageLambda = () => new Promise((resolve, reject) => {
     Promise.all([runGradleFatJar().then(copyFatJar()), packageLambdaZip()])
         .then(results => {
             results.forEach(console.log);
@@ -75,17 +75,17 @@ let packageLambda = ()=>new Promise((resolve, reject)=> {
 });
 
 
-let createSourceAndLabworkBucket = ()=>new Promise((resolveAll, rejectAny)=> {
+let createSourceAndLabworkBucket = () => new Promise((resolveAll, rejectAny) => {
     let s3 = new AWS.S3();
 
-    let createBucket = (bucket) =>new Promise((resolve, reject)=> {
+    let createBucket = (bucket) => new Promise((resolve, reject) => {
         let params = {
             Bucket: bucket, /* required */
             CreateBucketConfiguration: {
                 LocationConstraint: configure.labRegion
             }
         };
-        s3.createBucket(params, function (err, data) {
+        s3.createBucket(params, (err, data) => {
             //Bucket may exist and cause error, and ignore it!
             if (err && err.code != 'BucketAlreadyOwnedByYou')
                 reject(err, err.stack); // an error occurred
@@ -102,7 +102,7 @@ let createSourceAndLabworkBucket = ()=>new Promise((resolveAll, rejectAny)=> {
     });
 });
 
-let uploadLambdaCode = ()=>new Promise((resolve, reject)=> {
+let uploadLambdaCode = () => new Promise((resolve, reject) => {
     let s3Manager = new S3Manager(configure.labRegion, configure.cloudformationS3Bucket);
     Promise.all([
         s3Manager.uploadFile("LambdaFunction.yaml", __dirname + "/cfn/LambdaFunction.yaml"),
@@ -121,7 +121,7 @@ let uploadLambdaCode = ()=>new Promise((resolve, reject)=> {
 });
 
 
-let createAWSCloudLabStack = ()=> new Promise((resolve, reject)=> {
+let createAWSCloudLabStack = () => new Promise((resolve, reject) => {
     let params = {
         StackName: "AWSCloudLab", /* required */
         Capabilities: [
@@ -193,19 +193,19 @@ let createAWSCloudLabStack = ()=> new Promise((resolve, reject)=> {
 });
 
 let delay = ms => {
-    return new Promise(function (resolve, reject) {
+    return new Promise((resolve, reject) => {
         console.log("Delay for " + ms + "ms.");
         setTimeout(resolve, ms); // (A)
     });
 }
-let delay1Min = ()=> delay(1000 * 60);
+let delay1Min = () => delay(1000 * 60);
 
 packageLambda()
     .then(createSourceAndLabworkBucket())
     .then(uploadLambdaCode)
     .then(createAWSCloudLabStack)
     .then(delay1Min)
-    .then(c=> {
+    .then(c => {
         console.log(c);
         dataSeed.run(configure);
     })

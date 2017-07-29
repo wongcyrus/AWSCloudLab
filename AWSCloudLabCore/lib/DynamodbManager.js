@@ -14,7 +14,7 @@ class DynamodbManager {
         console.log(params);
 
         return new Promise((resolve, reject)=> {
-            this.docClient.get(params, function (err, dbData) {
+            this.docClient.get(params, (err, dbData) => {
                 if (err) {
                     console.log(err, err.stack);
                     reject(err);

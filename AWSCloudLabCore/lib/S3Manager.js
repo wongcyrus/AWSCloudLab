@@ -25,7 +25,7 @@ class S3Manager {
                     Bucket: this.bucket,
                     Key: key,
                     Body: fileStream
-                }, function (err) {
+                }, (err) => {
                     if (err) {
                         reject(err);
                     }
@@ -75,14 +75,14 @@ class S3Manager {
             };
             console.log(params);
             let downloader = client.downloadFile(params);
-            downloader.on('error', function (err) {
+            downloader.on('error', (err) => {
                 console.error("unable to download:", err.stack);
                 reject(err);
             });
-            downloader.on('progress', function () {
+            downloader.on('progress', () => {
                 console.log("progress", downloader.progressAmount, downloader.progressTotal);
             });
-            downloader.on('end', function () {
+            downloader.on('end', () => {
                 console.log("done downloading");
                 resolve(filePathname);
             });

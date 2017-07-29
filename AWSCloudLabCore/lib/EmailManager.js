@@ -24,7 +24,7 @@ class EmailManager {
         if (attachmentFilePath) {
             let segments = attachmentFilePath.split("/");
             options.attachments = [{   // file on disk as an attachment
-                filename: segments[segments.length - 1].replace(/@/g,'_'),
+                filename: segments[segments.length - 1].replace(/@/g, '_'),
                 path: attachmentFilePath // stream this file
             }]
         }
@@ -32,11 +32,11 @@ class EmailManager {
             if (this.sesRegion) {
                 let ses = new AWS.SES({region: this.sesRegion});
                 let mail = mailcomposer(options);
-                mail.build(function (err, messageSource) {
+                mail.build((err, messageSource) => {
                     if (err) {
                         reject(err);
                     } else {
-                        ses.sendRawEmail({RawMessage: {Data: messageSource}}, function (err, data) {
+                        ses.sendRawEmail({RawMessage: {Data: messageSource}}, (err, data) => {
                             if (err) {
                                 reject(err, err.stack);
                             } else {
@@ -63,7 +63,7 @@ class EmailManager {
                 //     text: textMessage,
                 //     html: htmlMessage
                 // };
-                transporter.sendMail(options, function (error, info) {
+                transporter.sendMail(options, (error, info) => {
                     if (error) {
                         reject(error);
                     }
@@ -73,4 +73,5 @@ class EmailManager {
         });
     }
 }
+
 module.exports = EmailManager;
