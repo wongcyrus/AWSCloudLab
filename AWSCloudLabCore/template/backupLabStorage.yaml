@@ -237,9 +237,6 @@ Resources:
         UserData:
           Fn::Base64:
             Fn::Sub:
-              # Use a literal | to let us enter a large block of text but with variable replacements
-              # We then use those special variables inside the literal block
-              # We can also use some functions and variables directly inside the literal block
               - |
                 #!/bin/bash
                 export JAVA_HOME=/usr/lib/jvm/jre
@@ -250,8 +247,7 @@ Resources:
 
                 declare -a emails=( <% users.forEach(function(user,i){ %>"<%-user.email%>" <% }); %>)
                 mkdir data
-                curl http://169.254.169.254/latest/meta-data/instance-id  -o instanceid.txt
-                    instanceId=`cat instanceid.txt`
+                instanceId==$(curl -s http://instance-data/latest/meta-data/instance-id)
 
                 driveLetters=(f g h i j k l m n o p)
                 driveLetterIndex=0
@@ -259,13 +255,23 @@ Resources:
                     driveLetter=${!driveLetters[$driveLetterIndex % ${!#driveLetters[@]}]}
                     printf "%s\t%s\t%s\t%s\n" "$i" "${!volumeIds[$i]}" "${!emails[$i]} ${!driveLetter}"
 
-                    ec2-attach-volume ${!volumeIds[$i]} -i $instanceId  -d /dev/sd${!driveLetter} --region <%-region%>
-                    sleep 10s
+                    ec2-attach-volume ${!volumeIds[$i]} -i $instanceId  -d /dev/sd${!driveLetter} --region ${AWS::Region}
+                    DATA_STATE="unknown"
+                    until [ "${!DATA_STATE}" == "attached" ]; do
+                      DATA_STATE=$(aws ec2 describe-volumes \
+                        --region ${AWS::Region} \
+                        --filters \
+                            Name=attachment.instance-id,Values=${!instanceId} \
+                            Name=attachment.device,Values=/dev/sd${!driveLetter} \
+                        --query Volumes[].Attachments[].State \
+                        --output text)
+                      sleep 5
+                    done
                     lsblk
-                    mount -t ntfs /dev/xvd{!driveLetter}1 data
-                    aws s3 sync data "s3://<%-labWorkBucket%>/<%-users[0].course.course%>/<%-users[0].lab%>/${!emails[$i]}" --region <%-region%> --exclude *RECYCLE.BIN*
-                    umount /dev/xvd${!driveLetter}1
-                    ec2-detach-volume ${!volumeIds[$i]} --region <%-region%>
+                    mount /dev/xvd${!driveLetter} data
+                    aws s3 sync data "s3://${labWorkBucket}/${course}/${lab}/${!emails[$i]}" --region ${AWS::Region} --exclude *RECYCLE.BIN*
+                    umount /dev/xvd${!driveLetter}
+                    ec2-detach-volume ${!volumeIds[$i]} --region ${AWS::Region}
                     sleep 5s
 
                     let driveLetterIndex=driveLetterIndex+1
@@ -275,6 +281,9 @@ Resources:
               - {
                 <% users.forEach(function(user,i){ %>
                 LabStorageVolume<%-i%>: !Ref LabStorageVolume<%-i%>,<% }); %>
+                labWorkBucket: "<%-labWorkBucket%>",
+                course: "<%-users[0].course.course%>",
+                lab: "<%-users[0].lab%>"
                 }
 #<% users.forEach(function(user,i){ %>
   LabStorageVolume<%-i%>:

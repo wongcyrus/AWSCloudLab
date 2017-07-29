@@ -20,14 +20,14 @@ const dataSeed = require('./dataSeed');
 const configure = {
     "projectId": "awscloudlab",
     "labRegion": "ap-northeast-1",
-    "userListS3Bucket": "student4.cloudlabhk.com",
-    "keypairS3Bucket": "keypairs4.cloudlabhk.com",
+    "userListS3Bucket": "student2.cloudlabhk.com",
+    "keypairS3Bucket": "keypairs2.cloudlabhk.com",
     "cloudformationS3Bucket": "cloudformation2.cloudlabhk.com",
     "labWorkBucket": "labwork3.cloudlabhk.com",
     "senderEmail": "cloudlabaws@gmail.com",
     "smtpHost": "smtp.gmail.com",
     "stmpUser": "cloudlabaws@gmail.com",
-    "smtpPassword": "39282662",
+    "smtpPassword": "XXXXXXXXXXXXXXXXXXX",
     "expirationInDays": 180
 };
 
