@@ -94,6 +94,7 @@ Resources:
             - ec2:DescribeInstances
             - ec2:DescribeVolumeAttribute
             - ec2:DescribeVolumeStatus
+            - ec2:DescribeVolumes
             Resource: "*"
   BackupInstanceProfile:
     Type: AWS::IAM::InstanceProfile
@@ -247,7 +248,7 @@ Resources:
 
                 declare -a emails=( <% users.forEach(function(user,i){ %>"<%-user.email%>" <% }); %>)
                 mkdir data
-                instanceId==$(curl -s http://instance-data/latest/meta-data/instance-id)
+                instanceId=$(curl -s http://169.254.169.254/latest/meta-data/instance-id)
 
                 driveLetters=(f g h i j k l m n o p)
                 driveLetterIndex=0
@@ -268,9 +269,9 @@ Resources:
                       sleep 5
                     done
                     lsblk
-                    mount /dev/xvd${!driveLetter} data
+                    mount -t auto /dev/xvd${!driveLetter}1 data
                     aws s3 sync data "s3://${labWorkBucket}/${course}/${lab}/${!emails[$i]}" --region ${AWS::Region} --exclude *RECYCLE.BIN*
-                    umount /dev/xvd${!driveLetter}
+                    umount /dev/xvd${!driveLetter}1
                     ec2-detach-volume ${!volumeIds[$i]} --region ${AWS::Region}
                     sleep 5s
 
