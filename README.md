@@ -25,6 +25,7 @@ https://www.linkedin.com/pulse/aws-cloud-lab-one-more-real-educational-use-case-
 Mr. Cyrus Wong, R&D Coordinator (Data Scientist & AWS certified Professional) of Cloud Innovation Centre - IVE (Lee Wai Lee) - Department of Information Technology, and the AWS All 7 Certified Community Hero of Hong Kong.
 
 Linkedin 		https://hk.linkedin.com/in/cyruswong
+
 AWS Community Hero https://aws.amazon.com/tw/heroes/asia-pacific/cyrus-wong/
 
 ##How to setup and configure
