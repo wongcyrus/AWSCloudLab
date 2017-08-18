@@ -46,26 +46,21 @@ class EmailManager {
                     }
                 });
             } else {
-                let smtpConfig = {
+                // create reusable transporter object using the default SMTP transport
+                let transporter = nodemailer.createTransport({
                     host: this.smtpHost,
                     port: 465,
-                    secure: true, // use SSL
+                    secure: true, // secure:true for port 465, secure:false for port 587
                     auth: {
                         user: this.stmpUser,
                         pass: this.smtpPassword
                     }
-                };
-                let transporter = nodemailer.createTransport(smtpConfig);
-                // let mailOptions = {
-                //     from: this.senderEmail,
-                //     to: to,
-                //     subject: subject,
-                //     text: textMessage,
-                //     html: htmlMessage
-                // };
+                });
+
+                // send mail with defined transport object
                 transporter.sendMail(options, (error, info) => {
                     if (error) {
-                        reject(error);
+                        return reject(error);
                     }
                     resolve('Message sent: ' + info);
                 });

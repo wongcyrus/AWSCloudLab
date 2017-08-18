@@ -87,7 +87,7 @@ let createSourceAndLabworkBucket = () => new Promise((resolveAll, rejectAny) => 
         };
         s3.createBucket(params, (err, data) => {
             //Bucket may exist and cause error, and ignore it!
-            if (err && err.code != 'BucketAlreadyOwnedByYou')
+            if (err && err.code !== 'BucketAlreadyOwnedByYou')
                 reject(err, err.stack); // an error occurred
             resolve(data);           // successful response
         });
@@ -197,7 +197,7 @@ let delay = ms => {
         console.log("Delay for " + ms + "ms.");
         setTimeout(resolve, ms); // (A)
     });
-}
+};
 let delay1Min = () => delay(1000 * 60);
 
 packageLambda()
