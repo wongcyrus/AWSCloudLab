@@ -1,0 +1,491 @@
+AWSTemplateFormatVersion: "2010-09-09"
+Transform: 'AWS::Serverless-2016-10-31'
+Description: AWS Cloud Lab SAM Deployment
+Parameters:
+  SourceBucket:
+    Type: String
+    Default: cloudformation2.cloudlabhk.com
+  KeypairsBucket:
+    Type: String
+    Default: keypair.cloudlabhk.com
+  UserListBucket:
+    Type: String
+    Default: userlist.cloudlabhk.com
+  KeypairExpirationInDays:
+    Type: Number
+    Default: 30
+  labRegion:
+    Type: String
+    Default: ap-northeast-1
+  cloudformationS3Bucket:
+    Type: String
+    Default: cloudformation2.cloudlabhk.com
+  expirationInDays:
+    Type: Number
+    Default: 180
+  labWorkBucket:
+    Type: String
+    Default: labwork.cloudlabhk.com
+  senderEmail:
+    Type: String
+    Default: cloudlabaws@gmail.com
+  smtpHost:
+    Type: String
+    Default: smtp.gmail.com
+  smtpPassword:
+    Type: String
+    Default: 39282662
+  stmpUser:
+    Type: String
+    Default: cloudlabaws@gmail.com
+  teacherEmail:
+    Type: String
+    Default: cywong@vtc.edu.hk
+  teacherCalenderIcsUrl:
+    Type: String
+    Default: https://calendar.google.com/calendar/ical/spe8ehlqjkv8hd7mdjs3d2g80c%40group.calendar.google.com/public/basic.ics
+  teacherCourse:
+    Type: String
+    Default: ITP4104 Lab A
+  imageId:
+    Type: AWS::EC2::Image::Id
+    Default: ami-d76d77b0
+  labMaterialSnapshotId:
+    Type: String
+    Default: snap-0e5811ac573f45c2b
+  labStorageSnapshotId:
+    Type: String
+    Default: snap-0e5811ac573f45c2b
+  instanceType:
+    Type: String
+    Default: t2.nano
+  share:
+    Type: String
+    Default: imageId, labMaterialSnapshotId, labStorageSnapshotId, endLabAmi
+  continue:
+    Type: String
+    Default: true
+    AllowedValues:
+      - true
+      - false
+
+Resources:
+  AWSCloudLabSchedulerFunction:
+    Type: 'AWS::Serverless::Function'
+    Properties:
+      FunctionName: AWSCloudLabScheduler
+      Description: AWS Cloud Lab Scheduler
+      Timeout: 60
+      Handler: com.cloudlabhk.scheduler.LambdaFunctionHandler
+      Runtime: java8
+      MemorySize: 256
+      CodeUri:
+        Bucket: !Ref SourceBucket
+        Key: awscloudlabscheduler-1.0.jar
+      Policies:
+        - AWSLambdaExecute # Managed Policy
+        - Version: '2012-10-17' # Policy Document
+          Statement:
+            - Effect: Allow
+              Action:
+              - lambda:InvokeFunction
+              - lambda:GetFunctionConfiguration
+              Resource: "*"
+            - Effect: Allow
+              Action:
+              - dynamodb:Scan
+              - dynamodb:GetItem
+              - dynamodb:PutItem
+              - dynamodb:UpdateItem
+              - dynamodb:DeleteItem
+              Resource:
+              - !Sub arn:aws:dynamodb:${AWS::Region}:${AWS::AccountId}:table/configure
+              - !Sub arn:aws:dynamodb:${AWS::Region}:${AWS::AccountId}:table/course
+              - !Sub arn:aws:dynamodb:${AWS::Region}:${AWS::AccountId}:table/configure
+              - !Sub arn:aws:dynamodb:${AWS::Region}:${AWS::AccountId}:table/lab
+      Events:
+        CheckCalender:
+          Type: Schedule
+          Properties:
+            Schedule: cron(0/15 * * * ? *)
+
+  AWSCloudLabBuilderFunction:
+    Type: 'AWS::Serverless::Function'
+    Properties:
+      FunctionName: AWSCloudLabBuilder
+      Description: AWS Cloud Lab Builder
+      Timeout: 180
+      Handler: createLabLambda.handler
+      Runtime: nodejs4.3
+      MemorySize: 512
+      CodeUri:
+        Bucket: !Ref SourceBucket
+        Key: awscloudlab_latest.zip
+      Policies:
+        - AWSLambdaExecute # Managed Policy
+        - Version: '2012-10-17' # Policy Document
+          Statement:
+            - Effect: Allow
+              Action:
+              - lambda:InvokeFunction
+              - lambda:GetFunctionConfiguration
+              Resource: "*"
+            - Effect: Allow
+              Action:
+              - cloudformation:CreateStack
+              - cloudformation:DescribeStacks
+              - cloudformation:DescribeStackEvents
+              - cloudformation:DescribeStackResources
+              - cloudformation:GetTemplate
+              - cloudformation:ValidateTemplate
+              - cloudformation:DeleteStack
+              - cloudformation:ListStacks
+              - lambda:*
+              - ec2:*
+              - events:*
+              - sns:Publish
+              - ses:SendEmail
+              - ses:SendRawEmail
+              - iam:*
+              Resource: "*"
+            - Effect: Allow
+              Action: iam:PassRole
+              Resource: arn:aws:iam::*:role/AWS_Events_Invoke_Targets
+            - Effect: Allow
+              Action:
+              - dynamodb:Scan
+              - dynamodb:GetItem
+              - dynamodb:PutItem
+              - dynamodb:UpdateItem
+              - dynamodb:DeleteItem
+              Resource:
+              - !Sub arn:aws:dynamodb:${AWS::Region}:${AWS::AccountId}:table/configure
+              - !Sub arn:aws:dynamodb:${AWS::Region}:${AWS::AccountId}:table/course
+              - !Sub arn:aws:dynamodb:${AWS::Region}:${AWS::AccountId}:table/configure
+              - !Sub arn:aws:dynamodb:${AWS::Region}:${AWS::AccountId}:table/lab
+
+  AWSCloudLabTerminatorFunction:
+    Type: 'AWS::Serverless::Function'
+    Properties:
+      FunctionName: AWSCloudLabTerminator
+      Description: AWS Cloud Lab Terminator
+      Timeout: 180
+      Handler: deleteLabStackLambda.handler
+      Runtime: nodejs4.3
+      MemorySize: 512
+      CodeUri:
+        Bucket: !Ref SourceBucket
+        Key: awscloudlab_latest.zip
+      Policies:
+        - AWSLambdaExecute # Managed Policy
+        - Version: '2012-10-17' # Policy Document
+          Statement:
+            - Effect: Allow
+              Action:
+              - lambda:InvokeFunction
+              - lambda:GetFunctionConfiguration
+              Resource: "*"
+            - Effect: Allow
+              Action:
+              - cloudformation:CreateStack
+              - cloudformation:DescribeStacks
+              - cloudformation:DescribeStackEvents
+              - cloudformation:DescribeStackResources
+              - cloudformation:GetTemplate
+              - cloudformation:ValidateTemplate
+              - cloudformation:DeleteStack
+              - cloudformation:ListStacks
+              - lambda:*
+              - ec2:*
+              - events:*
+              - sns:Publish
+              - ses:SendEmail
+              - ses:SendRawEmail
+              - iam:*
+              Resource: "*"
+            - Effect: Allow
+              Action: iam:PassRole
+              Resource: arn:aws:iam::*:role/AWS_Events_Invoke_Targets
+            - Effect: Allow
+              Action:
+              - dynamodb:Scan
+              - dynamodb:GetItem
+              - dynamodb:PutItem
+              - dynamodb:UpdateItem
+              - dynamodb:DeleteItem
+              Resource:
+              - !Sub arn:aws:dynamodb:${AWS::Region}:${AWS::AccountId}:table/configure
+              - !Sub arn:aws:dynamodb:${AWS::Region}:${AWS::AccountId}:table/course
+              - !Sub arn:aws:dynamodb:${AWS::Region}:${AWS::AccountId}:table/configure
+              - !Sub arn:aws:dynamodb:${AWS::Region}:${AWS::AccountId}:table/lab
+
+  AWSCloudLabEndLabFunction:
+    Type: 'AWS::Serverless::Function'
+    Properties:
+      FunctionName: AWSCloudLabEndedLab
+      Description: AWS Cloud Lab End Lab
+      Timeout: 180
+      Handler: deleteLabStackLambda.handler
+      Runtime: nodejs4.3
+      MemorySize: 512
+      CodeUri:
+        Bucket: !Ref SourceBucket
+        Key: awscloudlab_latest.zip
+      Policies:
+        - AWSLambdaExecute # Managed Policy
+        - Version: '2012-10-17' # Policy Document
+          Statement:
+            - Effect: Allow
+              Action:
+              - lambda:InvokeFunction
+              - lambda:GetFunctionConfiguration
+              Resource: "*"
+            - Effect: Allow
+              Action:
+              - cloudformation:CreateStack
+              - cloudformation:DescribeStacks
+              - cloudformation:DescribeStackEvents
+              - cloudformation:DescribeStackResources
+              - cloudformation:GetTemplate
+              - cloudformation:ValidateTemplate
+              - cloudformation:DeleteStack
+              - cloudformation:ListStacks
+              - lambda:*
+              - ec2:*
+              - events:*
+              - sns:Publish
+              - ses:SendEmail
+              - ses:SendRawEmail
+              - iam:*
+              Resource: "*"
+            - Effect: Allow
+              Action: iam:PassRole
+              Resource: arn:aws:iam::*:role/AWS_Events_Invoke_Targets
+            - Effect: Allow
+              Action:
+              - dynamodb:Scan
+              - dynamodb:GetItem
+              - dynamodb:PutItem
+              - dynamodb:UpdateItem
+              - dynamodb:DeleteItem
+              Resource:
+              - !Sub arn:aws:dynamodb:${AWS::Region}:${AWS::AccountId}:table/configure
+              - !Sub arn:aws:dynamodb:${AWS::Region}:${AWS::AccountId}:table/course
+              - !Sub arn:aws:dynamodb:${AWS::Region}:${AWS::AccountId}:table/configure
+              - !Sub arn:aws:dynamodb:${AWS::Region}:${AWS::AccountId}:table/lab
+      Events:
+        AWSCloudLabStackEvent:
+          Type: SNS
+          Properties:
+            Topic: !Sub arn:aws:sns:${AWS::Region}:${AWS::AccountId}:AWSCloudLabStackEvent
+
+  AWSCloudLabEndLabAmiFunction:
+    Type: 'AWS::Serverless::Function'
+    Properties:
+      FunctionName: AWSCloudLabEndLabAmi
+      Description: AWS Cloud Lab End Lab AMI
+      Timeout: 180
+      Handler: endLabAmisLambda.handler
+      Runtime: nodejs4.3
+      MemorySize: 128
+      CodeUri:
+        Bucket: !Ref SourceBucket
+        Key: awscloudlab_latest.zip
+      Policies:
+        - AWSLambdaExecute # Managed Policy
+        - Version: '2012-10-17' # Policy Document
+          Statement:
+            - Effect: Allow
+              Action:
+              - lambda:InvokeFunction
+              - lambda:GetFunctionConfiguration
+              Resource: "*"
+            - Effect: Allow
+              Action:
+              - cloudformation:CreateStack
+              - cloudformation:DescribeStacks
+              - cloudformation:DescribeStackEvents
+              - cloudformation:DescribeStackResources
+              - cloudformation:GetTemplate
+              - cloudformation:ValidateTemplate
+              - cloudformation:DeleteStack
+              - cloudformation:ListStacks
+              - lambda:*
+              - ec2:*
+              - events:*
+              - sns:Publish
+              - ses:SendEmail
+              - ses:SendRawEmail
+              - iam:*
+              Resource: "*"
+            - Effect: Allow
+              Action: iam:PassRole
+              Resource: arn:aws:iam::*:role/AWS_Events_Invoke_Targets
+            - Effect: Allow
+              Action:
+              - dynamodb:Scan
+              - dynamodb:GetItem
+              - dynamodb:PutItem
+              - dynamodb:UpdateItem
+              - dynamodb:DeleteItem
+              Resource:
+              - !Sub arn:aws:dynamodb:${AWS::Region}:${AWS::AccountId}:table/configure
+              - !Sub arn:aws:dynamodb:${AWS::Region}:${AWS::AccountId}:table/course
+              - !Sub arn:aws:dynamodb:${AWS::Region}:${AWS::AccountId}:table/configure
+              - !Sub arn:aws:dynamodb:${AWS::Region}:${AWS::AccountId}:table/lab
+
+  AWSCloudLabDBInitFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      FunctionName: AWSCloudLabEndLabDBInit
+      Description: AWS Cloud Lab Initial Data
+      Timeout: 180
+      Handler: dbInit.handler
+      Runtime: nodejs4.3
+      MemorySize: 128
+      CodeUri:
+        Bucket: !Ref SourceBucket
+        Key: awscloudlab_latest.zip
+      Policies:
+        - AWSLambdaExecute # Managed Policy
+        - Version: '2012-10-17' # Policy Document
+          Statement:
+            - Effect: Allow
+              Action:
+              - dynamodb:PutItem
+              Resource:
+              - !Sub arn:aws:dynamodb:${AWS::Region}:${AWS::AccountId}:table/configure
+              - !Sub arn:aws:dynamodb:${AWS::Region}:${AWS::AccountId}:table/course
+              - !Sub arn:aws:dynamodb:${AWS::Region}:${AWS::AccountId}:table/configure
+              - !Sub arn:aws:dynamodb:${AWS::Region}:${AWS::AccountId}:table/lab
+      Environment:
+        Variables:
+          SourceBucket: !Ref SourceBucket
+          KeypairsBucket: !Ref KeypairsBucket
+          UserListBucket: !Ref UserListBucket
+          KeypairExpirationInDays: !Ref KeypairExpirationInDays
+          labRegion: !Ref labRegion
+          cloudformationS3Bucket: !Ref cloudformationS3Bucket
+          expirationInDays: !Ref expirationInDays
+          labWorkBucket: !Ref labWorkBucket
+          senderEmail: !Ref senderEmail
+          smtpHost: !Ref smtpHost
+          smtpPassword: !Ref smtpPassword
+          stmpUser: !Ref stmpUser
+          teacherEmail: !Ref teacherEmail
+          teacherCalenderIcsUrl: !Ref teacherCalenderIcsUrl
+          teacherCourse: !Ref teacherCourse
+          imageId: !Ref imageId
+          labMaterialSnapshotId: !Ref labMaterialSnapshotId
+          labStorageSnapshotId: !Ref labStorageSnapshotId
+          instanceType: !Ref instanceType
+          share: !Ref share
+          continue: !Ref continue
+
+  LexBuilderCustomReseources:
+    Type: Custom::LexBuilder
+    DependsOn:
+      - configureDynamoDBTable
+      - courseDynamoDBTable
+      - calendarDynamoDBTable
+      - labDynamoDBTable
+    Version: 1.0
+    Properties:
+      ServiceToken: !GetAtt AWSCloudLabDBInitFunction.Arn
+      StackName:
+        Ref: AWS::StackName
+      SourceBucket: !Ref SourceBucket
+
+# SNS
+  AWSCloudLabDeletedTopic:
+    Type: AWS::SNS::Topic
+    Properties:
+      DisplayName: AWS Cloud Lab Stack Event
+      TopicName: AWSCloudLabStackEvent
+      Subscription:
+      - Endpoint: !GetAtt AWSCloudLabEndLabFunction.Arn
+        Protocol: lambda
+
+# S3 Bucket
+  KeypairsS3Bucket:
+    Type: AWS::S3::Bucket
+#    DeletionPolicy: Retain
+    Properties:
+      AccessControl: Private
+      BucketName:
+        Ref: KeypairsBucket
+      LifecycleConfiguration:
+        Rules:
+        - Id: DeleteRule
+          Status: Enabled
+          ExpirationInDays:
+            Ref: KeypairExpirationInDays
+  UserListS3Bucket:
+    Type: AWS::S3::Bucket
+#    DeletionPolicy: Retain
+    Properties:
+      AccessControl: Private
+      BucketName:
+        Ref: UserListBucket
+
+# DynamoDB
+  configureDynamoDBTable:
+    Type: AWS::DynamoDB::Table
+    Properties:
+      TableName: configure
+      AttributeDefinitions:
+      - AttributeName: projectId
+        AttributeType: S
+      KeySchema:
+      - AttributeName: projectId
+        KeyType: HASH
+      ProvisionedThroughput:
+        ReadCapacityUnits: '1'
+        WriteCapacityUnits: '1'
+  courseDynamoDBTable:
+    Type: AWS::DynamoDB::Table
+    Properties:
+      TableName: course
+      AttributeDefinitions:
+      - AttributeName: course
+        AttributeType: S
+      - AttributeName: teacher
+        AttributeType: S
+      KeySchema:
+      - AttributeName: course
+        KeyType: HASH
+      - AttributeName: teacher
+        KeyType: RANGE
+      ProvisionedThroughput:
+        ReadCapacityUnits: '1'
+        WriteCapacityUnits: '1'
+  calendarDynamoDBTable:
+    Type: AWS::DynamoDB::Table
+    Properties:
+      TableName: calendar
+      AttributeDefinitions:
+      - AttributeName: teacher
+        AttributeType: S
+      - AttributeName: icsUrl
+        AttributeType: S
+      KeySchema:
+      - AttributeName: teacher
+        KeyType: HASH
+      - AttributeName: icsUrl
+        KeyType: RANGE
+      ProvisionedThroughput:
+        ReadCapacityUnits: '1'
+        WriteCapacityUnits: '1'
+  labDynamoDBTable:
+    Type: AWS::DynamoDB::Table
+    Properties:
+      TableName: lab
+      AttributeDefinitions:
+      - AttributeName: id
+        AttributeType: S
+      KeySchema:
+      - AttributeName: id
+        KeyType: HASH
+      ProvisionedThroughput:
+        ReadCapacityUnits: '1'
+        WriteCapacityUnits: '1'

@@ -16,7 +16,8 @@
     "randomstring": "~1.0.0",
     "mailcomposer": "~4.0.1",
     "nodemailer": "~2.3",
-    "s3": "~4.4.0"
+    "s3": "~4.4.0",
+    "dynamodb-data-types": ">=2.0.0"
   },
   "devDependencies": {
     "aws-sdk": ">=2.0.23",
@@ -38,7 +39,8 @@
     "randomstring",
     "mailcomposer",
     "nodemailer",
-    "s3"
+    "s3",
+    "dynamodb-data-types"
   ],
   "main": "Gruntfile.js",
   "scripts": {

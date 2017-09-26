@@ -203,12 +203,12 @@ let delay1Min = () => delay(1000 * 60);
 packageLambda()
     .then(createSourceAndLabworkBucket())
     .then(uploadLambdaCode)
-    .then(createAWSCloudLabStack)
-    .then(delay1Min)
-    .then(c => {
-        console.log(c);
-        dataSeed.run(configure);
-    })
+    // .then(createAWSCloudLabStack)
+    // .then(delay1Min)
+    // .then(c => {
+    //     console.log(c);
+    //     dataSeed.run(configure);
+    // })
     .catch(console.error);
 
 //dataSeed.run(configure);

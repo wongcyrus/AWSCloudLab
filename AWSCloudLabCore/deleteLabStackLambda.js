@@ -27,7 +27,7 @@ exports.handler = (event, context, callback) => {
         .then(s => callback(null, s))
         .catch(err=>callback(err));
 
-}
+};
 
 
 
