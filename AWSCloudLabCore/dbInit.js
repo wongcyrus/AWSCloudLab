@@ -9,9 +9,35 @@ exports.handler = (event, context, callback) => {
         AWS.config.update({region: process.env.labRegion});
         let docClient = new AWS.DynamoDB.DocumentClient();
 
-        let data = [{
-            TableName: "configure",
-            Item: {
+
+        // const configure = {
+//     "projectId": "awscloudlab",
+//     "labRegion": "ap-northeast-1",
+//     "userListS3Bucket": "student2.cloudlabhk.com",
+//     "keypairS3Bucket": "keypairs2.cloudlabhk.com",
+//     "cloudformationS3Bucket": "cloudformation2.cloudlabhk.com",
+//     "labWorkBucket": "labwork2.cloudlabhk.com",
+//     "senderEmail": "noreply@cloudlabhk.com",
+//     "sesRegion": "us-east-1",
+//     "expirationInDays": 180
+// };
+
+        let config = {};
+
+        if (process.env.sesRegion !== "")
+            config = {
+                "cloudformationS3Bucket": process.env.cloudformationS3Bucket,
+                "expirationInDays": process.env.expirationInDays,
+                "keypairS3Bucket": process.env.KeypairsBucket,
+                "labRegion": process.env.labRegion,
+                "labWorkBucket": process.env.labWorkBucket,
+                "projectId": "awscloudlab",
+                "senderEmail": process.env.senderEmail,
+                "sesRegion": process.env.sesRegion,
+                "userListS3Bucket": process.env.UserListBucket,
+            };
+        else
+            config = {
                 "cloudformationS3Bucket": process.env.cloudformationS3Bucket,
                 "expirationInDays": process.env.expirationInDays,
                 "keypairS3Bucket": process.env.KeypairsBucket,
@@ -24,6 +50,10 @@ exports.handler = (event, context, callback) => {
                 "stmpUser": process.env.stmpUser,
                 "userListS3Bucket": process.env.UserListBucket,
             }
+
+        let data = [{
+            TableName: "configure",
+            Item: config
         }, {
             TableName: "calendar",
             Item: {
@@ -57,7 +87,6 @@ exports.handler = (event, context, callback) => {
             });
         });
 
-
         Promise.all(data.map(putFunc)).then(values => {
             console.log(values);
             response.send(event, context, response.SUCCESS);
@@ -67,7 +96,8 @@ exports.handler = (event, context, callback) => {
             response.send(event, context, response.FAILED);
             callback(reason, null);
         });
-    } else
-        callback(null, "Do Nothing and Done!");
+    } else {
+        response.send(event, context, response.SUCCESS);
+    }
 };
 

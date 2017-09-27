@@ -3,7 +3,7 @@
 //npm install -g grunt-cli
 //npm install grunt-aws-lambda grunt-pack --save-dev
 
-var grunt = require('grunt');
+const grunt = require('grunt');
 grunt.loadNpmTasks('grunt-aws-lambda');
 
 grunt.initConfig({

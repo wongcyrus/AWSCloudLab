@@ -184,13 +184,13 @@ class Ec2Manager {
                 }, {
                     Name: 'tag:teacher', Values: [teacher]
                 }]
-            }
+            };
 
             let ec2 = new AWS.EC2();
             ec2.describeImages(params, (err, data) => {
                 if (err) reject(err); // an error occurred
                 else {
-                    if (data.Images.length == 0)
+                    if (data.Images.length === 0)
                         resolve(new Map());
                     else
                         resolve(data.Images.map(c=> {

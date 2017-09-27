@@ -1,11 +1,13 @@
 {
   "name": "awsCloudLabDeployments",
   "version": "0.0.1",
+  "description": "AWS Cloud Lab Deployment Tools",
+  "license": "MIT",
   "dependencies": {
     "aws-sdk": "2.4.8",
-    "cfn-response":">=1.0.1",
-    "consolidate": ">=0.13.1",
-    "ejs": ">=2.3.4",
+    "cfn-response": "^1.0.1",
+    "consolidate": "^0.13.1",
+    "ejs": "^2.3.4",
     "underscore": ">=1.8.3",
     "dynamodb-data-types": ">=2.0.0",
     "fs.extra": ">=0.0.1",

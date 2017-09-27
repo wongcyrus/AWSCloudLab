@@ -5,69 +5,94 @@ Parameters:
   SourceBucket:
     Type: String
     Default: cloudformation2.cloudlabhk.com
+    Description: Bucket Lambda deployment packages - awscloudlab_latest.zip and awscloudlabscheduler-1.0.jar
   KeypairsBucket:
     Type: String
     Default: keypair.cloudlabhk.com
+    Description: Bucket stores EC2 keypairs
   UserListBucket:
     Type: String
     Default: userlist.cloudlabhk.com
+    Description: Bucket stores Class Name List
   KeypairExpirationInDays:
     Type: Number
     Default: 30
+    Description: The number of day to keep the key pair in KeypairsBucket
   labRegion:
     Type: String
     Default: ap-northeast-1
+    Description: AWS region code (Must have Lambda!) i.e. ap-northeast-1
   cloudformationS3Bucket:
     Type: String
     Default: cloudformation2.cloudlabhk.com
-  expirationInDays:
+    Description: Bucket store all Cloudformation templates and Lambda packages for Lab Environment.
+  labWorkExpirationInDays:
     Type: Number
     Default: 180
+    Description: The number of day to keep the student lab work in lab Work bucket.
   labWorkBucket:
     Type: String
     Default: labwork.cloudlabhk.com
+    Description: Bucket Store student works.
   senderEmail:
     Type: String
     Default: cloudlabaws@gmail.com
+    Description: System sender email address
+  sesRegion:
+    Type: String
+    Default: SES Region code. If SES Region is defined, then system will use SES to send all email.
   smtpHost:
     Type: String
     Default: smtp.gmail.com
+    Description: SMTP Host, if SES Region is not empty string.
   smtpPassword:
     Type: String
     Default: 39282662
+    NoEcho: true
+    Description: SMTP server login password, if SES Region is not empty string.
   stmpUser:
     Type: String
     Default: cloudlabaws@gmail.com
+    Description: SMTP server login user, if SES Region is not empty string.
   teacherEmail:
     Type: String
     Default: cywong@vtc.edu.hk
+    Description: Teacher email, and it will add to course table.
   teacherCalenderIcsUrl:
     Type: String
     Default: https://calendar.google.com/calendar/ical/spe8ehlqjkv8hd7mdjs3d2g80c%40group.calendar.google.com/public/basic.ics
+    Description: Public Calendar ica uri
   teacherCourse:
     Type: String
     Default: ITP4104 Lab A
+    Description: Course Name, and it must match calendar title.
   imageId:
     Type: AWS::EC2::Image::Id
     Default: ami-d76d77b0
+    Description: AMI ID, and it must be in Lab region.
   labMaterialSnapshotId:
     Type: String
     Default: snap-0e5811ac573f45c2b
+    Description: Snapshot ID, and it must be in lab region. It will not be backup! Teacher uses it to share lab related files to students!
   labStorageSnapshotId:
     Type: String
     Default: snap-0e5811ac573f45c2b
+    Description: Snapshot ID, and it must be in lab region. It will backup with snapshot, and share back to student, if student provides his AWS Account ID.
   instanceType:
     Type: String
     Default: t2.nano
+    Description: Instance type that available in region must support VPC.
   share:
     Type: String
     Default: imageId, labMaterialSnapshotId, labStorageSnapshotId, endLabAmi
+    Description: Define what will share to students. ["imageId", "labMaterialSnapshotId", "labStorageSnapshotId", "endLabAmi"]
   continue:
     Type: String
     Default: true
     AllowedValues:
       - true
       - false
+    Description: true, It will use the end lab ami for the second lab! imageId will only be used in the first lab.
 
 Resources:
   AWSCloudLabSchedulerFunction:
@@ -116,7 +141,7 @@ Resources:
       Description: AWS Cloud Lab Builder
       Timeout: 180
       Handler: createLabLambda.handler
-      Runtime: nodejs4.3
+      Runtime: nodejs6.10
       MemorySize: 512
       CodeUri:
         Bucket: !Ref SourceBucket
@@ -171,7 +196,7 @@ Resources:
       Description: AWS Cloud Lab Terminator
       Timeout: 180
       Handler: deleteLabStackLambda.handler
-      Runtime: nodejs4.3
+      Runtime: nodejs6.10
       MemorySize: 512
       CodeUri:
         Bucket: !Ref SourceBucket
@@ -227,7 +252,7 @@ Resources:
       Description: AWS Cloud Lab End Lab
       Timeout: 180
       Handler: deleteLabStackLambda.handler
-      Runtime: nodejs4.3
+      Runtime: nodejs6.10
       MemorySize: 512
       CodeUri:
         Bucket: !Ref SourceBucket
@@ -287,7 +312,7 @@ Resources:
       Description: AWS Cloud Lab End Lab AMI
       Timeout: 180
       Handler: endLabAmisLambda.handler
-      Runtime: nodejs4.3
+      Runtime: nodejs6.10
       MemorySize: 128
       CodeUri:
         Bucket: !Ref SourceBucket
@@ -341,7 +366,7 @@ Resources:
       Description: AWS Cloud Lab Initial Data
       Timeout: 180
       Handler: dbInit.handler
-      Runtime: nodejs4.3
+      Runtime: nodejs6.10
       MemorySize: 128
       CodeUri:
         Bucket: !Ref SourceBucket
@@ -366,9 +391,10 @@ Resources:
           KeypairExpirationInDays: !Ref KeypairExpirationInDays
           labRegion: !Ref labRegion
           cloudformationS3Bucket: !Ref cloudformationS3Bucket
-          expirationInDays: !Ref expirationInDays
+          expirationInDays: !Ref labWorkExpirationInDays
           labWorkBucket: !Ref labWorkBucket
           senderEmail: !Ref senderEmail
+          sesRegion: !Ref sesRegion
           smtpHost: !Ref smtpHost
           smtpPassword: !Ref smtpPassword
           stmpUser: !Ref stmpUser
@@ -383,7 +409,7 @@ Resources:
           continue: !Ref continue
 
   LexBuilderCustomReseources:
-    Type: Custom::LexBuilder
+    Type: Custom::InitDB
     DependsOn:
       - configureDynamoDBTable
       - courseDynamoDBTable
@@ -417,6 +443,18 @@ Resources:
           Status: Enabled
           ExpirationInDays:
             Ref: KeypairExpirationInDays
+    Type: AWS::S3::Bucket
+#    DeletionPolicy: Retain
+    Properties:
+      AccessControl: Private
+      BucketName:
+        Ref: labWorkBucket
+      LifecycleConfiguration:
+        Rules:
+        - Id: DeleteRule
+          Status: Enabled
+          ExpirationInDays:
+            Ref: labWorkExpirationInDays
   UserListS3Bucket:
     Type: AWS::S3::Bucket
 #    DeletionPolicy: Retain
@@ -486,3 +524,87 @@ Resources:
       ProvisionedThroughput:
         ReadCapacityUnits: '1'
         WriteCapacityUnits: '1'
+
+Metadata:
+  AWS::CloudFormation::Interface:
+    ParameterGroups:
+      -
+        Label:
+          default: "Deployment"
+        Parameters:
+          - SourceBucket
+      -
+        Label:
+          default: "System Configuration"
+        Parameters:
+          - labRegion
+          - KeypairsBucket
+          - KeypairExpirationInDays
+          - UserListBucket
+          - cloudformationS3Bucket
+          - labWorkBucket
+          - labWorkExpirationInDays
+          - sesRegion
+          - senderEmail
+          - smtpHost
+          - smtpPassword
+          - stmpUser
+      -
+        Label:
+          default: "First Lab Configuration"
+        Parameters:
+          - teacherEmail
+          - teacherCalenderIcsUrl
+          - teacherCourse
+          - instanceType
+          - imageId
+          - labMaterialSnapshotId
+          - labStorageSnapshotId
+          - labWorkExpirationInDays
+          - share
+          - continue
+    ParameterLabels:
+      SourceBucket:
+        default: "Source Bucket"
+      KeypairsBucket:
+        default: "EC2 Key pair Bucket"
+      UserListBucket:
+        default: "User List Bucket"
+      KeypairExpirationInDays:
+        default: "Key pair Expiration In Days"
+      labRegion:
+        default: "Lab Running Region"
+      cloudformationS3Bucket:
+        default: "Lab Cloudformation and Lambda Package Bucket"
+      labWorkExpirationInDays:
+        default: "Lab Work Expiration In Days"
+      labWorkBucket:
+        default: "Student Lab Work Bucket"
+      senderEmail:
+        default: "Sender Email"
+      sesRegion:
+        default: "SES Region"
+      smtpHost:
+        default: "SMTP Host"
+      smtpPassword:
+        default: "SMTP Password"
+      stmpUser:
+        default: "SMTP User"
+      teacherEmail:
+        default: "Teacher Email"
+      teacherCalenderIcsUrl:
+        default: "Teacher Calender ICS Url"
+      teacherCourse:
+        default: "Course Name"
+      imageId:
+        default: "Lab EC2 AMI"
+      labMaterialSnapshotId:
+        default: "Lab Material Snapshot ID"
+      labStorageSnapshotId:
+        default: "Lab Storage Snapshot ID"
+      instanceType:
+        default: "Instance Type"
+      share:
+        default: "Share Mode"
+      continue:
+        default: "Is Continue"

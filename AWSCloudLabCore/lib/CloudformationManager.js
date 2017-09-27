@@ -115,7 +115,7 @@ class CloudformationManager {
     }
 
     runCloudformation() {
-        let endLabAmi = this.labContext.course.share.find(x => x === "endLabAmi") != undefined;
+        let endLabAmi = this.labContext.course.share.find(x => x === "endLabAmi") !== undefined;
         let params = {
             StackName: this.getLabTag(), /* required */
             Capabilities: [
@@ -222,7 +222,7 @@ class CloudformationManager {
     getStackEvents(stackName, region, nextToken) {
         let _this = this;
         return new Promise((resolve, reject) => {
-            var params = {
+            const params = {
                 StackName: stackName
             };
             if (nextToken)

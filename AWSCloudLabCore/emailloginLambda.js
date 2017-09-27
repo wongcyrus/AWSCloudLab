@@ -2,7 +2,6 @@
 const response = require('cfn-response');
 const AWS = require('aws-sdk');
 const cons = require('consolidate');
-const mailcomposer = require("mailcomposer");
 const EmailManager = require('./lib/EmailManager');
 const S3Manager = require('./lib/S3Manager');
 

@@ -4,9 +4,9 @@
   "description": "AWS Cloud Lab Core",
   "dependencies": {
     "aws-sdk": "^2.4.8",
-    "cfn-response":">=1.0.1",
-    "consolidate": "~0.13.1",
-    "ejs": "~2.3.4",
+    "cfn-response": "^1.0.1",
+    "consolidate": "^0.13.1",
+    "ejs": "^2.3.4",
     "node-xlsx": "~0.6.0",
     "underscore": "~1.8.3",
     "async": "~1.4.2",
@@ -47,5 +47,12 @@
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "author": "Cyrus Wong",
-  "license": "MIT"
+  "license": "MIT",
+  "engines": {
+    "node": ">=6.10"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/wongcyrus/AWSCloudLab.git"
+  }
 }
