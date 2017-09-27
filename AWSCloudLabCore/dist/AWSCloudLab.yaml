@@ -101,7 +101,7 @@ Resources:
               Resource:
               - !Sub arn:aws:dynamodb:${AWS::Region}:${AWS::AccountId}:table/configure
               - !Sub arn:aws:dynamodb:${AWS::Region}:${AWS::AccountId}:table/course
-              - !Sub arn:aws:dynamodb:${AWS::Region}:${AWS::AccountId}:table/configure
+              - !Sub arn:aws:dynamodb:${AWS::Region}:${AWS::AccountId}:table/calendar
               - !Sub arn:aws:dynamodb:${AWS::Region}:${AWS::AccountId}:table/lab
       Events:
         CheckCalender:
@@ -161,7 +161,7 @@ Resources:
               Resource:
               - !Sub arn:aws:dynamodb:${AWS::Region}:${AWS::AccountId}:table/configure
               - !Sub arn:aws:dynamodb:${AWS::Region}:${AWS::AccountId}:table/course
-              - !Sub arn:aws:dynamodb:${AWS::Region}:${AWS::AccountId}:table/configure
+              - !Sub arn:aws:dynamodb:${AWS::Region}:${AWS::AccountId}:table/calendar
               - !Sub arn:aws:dynamodb:${AWS::Region}:${AWS::AccountId}:table/lab
 
   AWSCloudLabTerminatorFunction:
@@ -216,11 +216,12 @@ Resources:
               Resource:
               - !Sub arn:aws:dynamodb:${AWS::Region}:${AWS::AccountId}:table/configure
               - !Sub arn:aws:dynamodb:${AWS::Region}:${AWS::AccountId}:table/course
-              - !Sub arn:aws:dynamodb:${AWS::Region}:${AWS::AccountId}:table/configure
+              - !Sub arn:aws:dynamodb:${AWS::Region}:${AWS::AccountId}:table/calendar
               - !Sub arn:aws:dynamodb:${AWS::Region}:${AWS::AccountId}:table/lab
 
   AWSCloudLabEndLabFunction:
     Type: 'AWS::Serverless::Function'
+    DependsOn: AWSCloudLabDeletedTopic
     Properties:
       FunctionName: AWSCloudLabEndedLab
       Description: AWS Cloud Lab End Lab
@@ -271,7 +272,7 @@ Resources:
               Resource:
               - !Sub arn:aws:dynamodb:${AWS::Region}:${AWS::AccountId}:table/configure
               - !Sub arn:aws:dynamodb:${AWS::Region}:${AWS::AccountId}:table/course
-              - !Sub arn:aws:dynamodb:${AWS::Region}:${AWS::AccountId}:table/configure
+              - !Sub arn:aws:dynamodb:${AWS::Region}:${AWS::AccountId}:table/calendar
               - !Sub arn:aws:dynamodb:${AWS::Region}:${AWS::AccountId}:table/lab
       Events:
         AWSCloudLabStackEvent:
@@ -331,13 +332,12 @@ Resources:
               Resource:
               - !Sub arn:aws:dynamodb:${AWS::Region}:${AWS::AccountId}:table/configure
               - !Sub arn:aws:dynamodb:${AWS::Region}:${AWS::AccountId}:table/course
-              - !Sub arn:aws:dynamodb:${AWS::Region}:${AWS::AccountId}:table/configure
+              - !Sub arn:aws:dynamodb:${AWS::Region}:${AWS::AccountId}:table/calendar
               - !Sub arn:aws:dynamodb:${AWS::Region}:${AWS::AccountId}:table/lab
 
   AWSCloudLabDBInitFunction:
     Type: AWS::Serverless::Function
     Properties:
-      FunctionName: AWSCloudLabEndLabDBInit
       Description: AWS Cloud Lab Initial Data
       Timeout: 180
       Handler: dbInit.handler
@@ -356,7 +356,7 @@ Resources:
               Resource:
               - !Sub arn:aws:dynamodb:${AWS::Region}:${AWS::AccountId}:table/configure
               - !Sub arn:aws:dynamodb:${AWS::Region}:${AWS::AccountId}:table/course
-              - !Sub arn:aws:dynamodb:${AWS::Region}:${AWS::AccountId}:table/configure
+              - !Sub arn:aws:dynamodb:${AWS::Region}:${AWS::AccountId}:table/calendar
               - !Sub arn:aws:dynamodb:${AWS::Region}:${AWS::AccountId}:table/lab
       Environment:
         Variables:
@@ -402,9 +402,6 @@ Resources:
     Properties:
       DisplayName: AWS Cloud Lab Stack Event
       TopicName: AWSCloudLabStackEvent
-      Subscription:
-      - Endpoint: !GetAtt AWSCloudLabEndLabFunction.Arn
-        Protocol: lambda
 
 # S3 Bucket
   KeypairsS3Bucket:

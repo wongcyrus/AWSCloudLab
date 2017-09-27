@@ -2,7 +2,7 @@
   "name": "awsCloudLabDeployments",
   "version": "0.0.1",
   "dependencies": {
-    "aws-sdk": ">=2.2.8",
+    "aws-sdk": "2.4.8",
     "cfn-response":">=1.0.1",
     "consolidate": ">=0.13.1",
     "ejs": ">=2.3.4",

@@ -1,6 +1,7 @@
 "use strict";
 //https://github.com/awslabs/dynamodb-document-js-sdk
 const AWS = require("aws-sdk");
+const response = require('cfn-response');
 
 
 exports.handler = (event, context, callback) => {
@@ -8,45 +9,28 @@ exports.handler = (event, context, callback) => {
         AWS.config.update({region: process.env.labRegion});
         let docClient = new AWS.DynamoDB.DocumentClient();
 
-        let pfunc = (err, data) => {
-            if (err) {
-                console.error("Unable to add item. Error JSON:", JSON.stringify(err, null, 2));
-            } else {
-                console.log("Added item:", JSON.stringify(data, null, 2));
-            }
-        };
-
-        let configure = {
-            "cloudformationS3Bucket": process.env.cloudformationS3Bucket,
-            "expirationInDays": process.env.expirationInDays,
-            "keypairS3Bucket": process.env.KeypairsBucket,
-            "labRegion": process.env.labRegion,
-            "labWorkBucket": process.env.labWorkBucket,
-            "projectId": "awscloudlab",
-            "senderEmail": process.env.senderEmail,
-            "smtpHost": process.env.smtpHost,
-            "smtpPassword": process.env.smtpPassword,
-            "stmpUser": process.env.stmpUser,
-            "userListS3Bucket": process.env.UserListBucket,
-        };
-
-
-        let params = {
+        let data = [{
             TableName: "configure",
-            Item: configure
-        };
-        docClient.put(params, pfunc);
-
-        params = {
+            Item: {
+                "cloudformationS3Bucket": process.env.cloudformationS3Bucket,
+                "expirationInDays": process.env.expirationInDays,
+                "keypairS3Bucket": process.env.KeypairsBucket,
+                "labRegion": process.env.labRegion,
+                "labWorkBucket": process.env.labWorkBucket,
+                "projectId": "awscloudlab",
+                "senderEmail": process.env.senderEmail,
+                "smtpHost": process.env.smtpHost,
+                "smtpPassword": process.env.smtpPassword,
+                "stmpUser": process.env.stmpUser,
+                "userListS3Bucket": process.env.UserListBucket,
+            }
+        }, {
             TableName: "calendar",
             Item: {
                 "teacher": process.env.teacherEmail,
                 "icsUrl": process.env.teacherCalenderIcsUrl
             }
-        };
-        docClient.put(params, pfunc);
-
-        params = {
+        }, {
             TableName: "course",
             Item: {
                 "course": process.env.teacherCourse,
@@ -59,12 +43,31 @@ exports.handler = (event, context, callback) => {
                 "continue": process.env.continue,
                 "share": process.env.share.split(',')
             }
-        };
+        }];
 
-        docClient.put(params, pfunc);
+        let putFunc = (params) => new Promise((resolve, reject) => {
+            docClient.put(params, (err, data) => {
+                if (err) {
+                    console.error("Unable to add item. Error JSON:", JSON.stringify(err, null, 2));
+                    reject(err);
+                } else {
+                    console.log("Added item:", JSON.stringify(data, null, 2));
+                    resolve(data);
+                }
+            });
+        });
 
-        callback(null, "Done!")
-    }
 
+        Promise.all(data.map(putFunc)).then(values => {
+            console.log(values);
+            response.send(event, context, response.SUCCESS);
+            callback(null, "Done!")
+        }).catch(reason => {
+            console.log(reason);
+            response.send(event, context, response.FAILED);
+            callback(reason, null);
+        });
+    } else
+        callback(null, "Do Nothing and Done!");
 };
 
