@@ -40,7 +40,8 @@ Parameters:
     Description: System sender email address
   sesRegion:
     Type: String
-    Default: SES Region code. If SES Region is defined, then system will use SES to send all email.
+    Default: ""
+    Description: SES Region code. If SES Region is defined, then system will use SES to send all email.
   smtpHost:
     Type: String
     Default: smtp.gmail.com
@@ -68,7 +69,7 @@ Parameters:
     Description: Course Name, and it must match calendar title.
   imageId:
     Type: AWS::EC2::Image::Id
-    Default: ami-d76d77b0
+    Default: ami-38e6135e
     Description: AMI ID, and it must be in Lab region.
   labMaterialSnapshotId:
     Type: String
