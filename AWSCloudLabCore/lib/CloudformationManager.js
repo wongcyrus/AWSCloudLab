@@ -1,8 +1,9 @@
 "use strict";
 const AWS = require('aws-sdk');
 const cons = require('consolidate');
-const fs = require('fs-extra');
+const fs = require('fs.extra');
 const md5 = require('js-md5');
+const filesize = require('file-size');
 
 const ZipFile = require('./ZipFile');
 const S3Manager = require('./S3Manager');
@@ -72,8 +73,10 @@ class CloudformationManager {
             console.log("copyDependencies");
             let tempFolder = "/tmp/DeleteStack";
 
-            fs.copy(__dirname + "/../", tempFolder, err => {
-                if (err) return reject(err);
+            fs.copyRecursive(__dirname + "/../", tempFolder, err => {
+                if (err) {
+                    reject(err);
+                }
                 console.log('Copied node_modules!');
                 resolve();
             });
@@ -92,16 +95,17 @@ class CloudformationManager {
         let s3Manager = new S3Manager(this.labContext.course.region, this.labContext.configure.cloudformationS3Bucket);
 
         let getFileSizeInMegabytes = (filename) => {
-            let stats = fs.statSync(filename);
+            let fd = fs.openSync(filename, 'a');
+            let stats = fs.fstatSync(fd);
             let fileSizeInBytes = stats["size"];
-            return fileSizeInBytes / 1000000.0
+            return filesize(fileSizeInBytes).human();
         };
 
         return new Promise((resolve, reject) => {
             copyDependencies()
                 .then(zipDeployment)
                 .then(() => {
-                    console.log("Upload to S3 " + getFileSizeInMegabytes(zipPath) + "mb");
+                    console.log("Upload to S3 " + getFileSizeInMegabytes(zipPath));
                     let key = this.getLabTag() + "DeleteStackLambda.zip";
                     return s3Manager.uploadFile(key, zipPath);
                 })

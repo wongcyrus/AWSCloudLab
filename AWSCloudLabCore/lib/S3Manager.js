@@ -1,7 +1,6 @@
 "use strict";
 const AWS = require('aws-sdk');
 const fs = require("fs");
-const s3Client = require('s3');
 
 class S3Manager {
     constructor(region, bucket) {
@@ -62,38 +61,18 @@ class S3Manager {
     getObject(key, filePathname) {
         return new Promise((resolve, reject) => {
             let s3 = new AWS.S3();
-            let options = {
-                s3Client: s3
-            };
-            let client = s3Client.createClient(options);
-            let params = {
-                localFile: filePathname,
-                s3Params: {
-                    Bucket: this.bucket,
-                    Key: key
-                }
-            };
-            console.log(params);
-            let downloader = client.downloadFile(params);
-            downloader.on('error', (err) => {
-                console.error("unable to download:", err.stack);
-                reject(err);
-            });
-            downloader.on('progress', () => {
-                console.log("progress", downloader.progressAmount, downloader.progressTotal);
-            });
-            downloader.on('end', () => {
-                console.log("done downloading");
-                resolve(filePathname);
-            });
+            let params = {Bucket: this.bucket, Key: key};
+            let file = require('fs').createWriteStream(filePathname);
 
-            // let params = {Bucket: this.bucket, Key: key};
-            //  let file = fs.createWriteStream(filePathname);
-            //  s3.getObject(params).createReadStream().pipe(file);
-            //  file.on('finish', resolve(filePathname));
-
+            s3.getObject(params).createReadStream()
+                .on('end', () => {
+                    return resolve();
+                })
+                .on('error', (error) => {
+                    return reject(error);
+                })
+                .pipe(file)
         });
-
     }
 }
 

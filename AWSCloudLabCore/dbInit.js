@@ -49,7 +49,7 @@ exports.handler = (event, context, callback) => {
                 "smtpPassword": process.env.smtpPassword,
                 "stmpUser": process.env.stmpUser,
                 "userListS3Bucket": process.env.UserListBucket,
-            }
+            };
 
         let data = [{
             TableName: "configure",

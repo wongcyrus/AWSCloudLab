@@ -15,15 +15,9 @@ class ZipFile {
 
             output.on('close', resolve);
             archive.on('error', reject);
-
             archive.pipe(output);
 
-            archive.bulk([{
-                expand: true,
-                cwd: this.sourceDirectory,
-                src: ['**']
-            }]);
-
+            archive.directory(this.sourceDirectory, false);
             archive.finalize();
         });
     };

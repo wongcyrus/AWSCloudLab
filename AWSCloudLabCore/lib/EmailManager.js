@@ -1,6 +1,6 @@
 "use strict";
 const AWS = require('aws-sdk');
-const mailcomposer = require("mailcomposer");
+const MailComposer = require('nodemailer/lib/mail-composer');
 const nodemailer = require('nodemailer');
 
 class EmailManager {
@@ -31,8 +31,8 @@ class EmailManager {
         return new Promise((resolve, reject) => {
             if (this.sesRegion) {
                 let ses = new AWS.SES({region: this.sesRegion});
-                let mail = mailcomposer(options);
-                mail.build((err, messageSource) => {
+                let mail = new MailComposer(options);
+                mail.compile().build((err, messageSource) => {
                     if (err) {
                         reject(err);
                     } else {

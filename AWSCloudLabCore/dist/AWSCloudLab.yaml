@@ -8,23 +8,19 @@ Parameters:
     Description: Bucket Lambda deployment packages - awscloudlab_latest.zip and awscloudlabscheduler-1.0.jar
   KeypairsBucket:
     Type: String
-    Default: keypair.cloudlabhk.com
+    Default: awscloudlab-keypair
     Description: Bucket stores EC2 keypairs
   UserListBucket:
     Type: String
-    Default: userlist.cloudlabhk.com
+    Default: awscloudlab-userlist
     Description: Bucket stores Class Name List
   KeypairExpirationInDays:
     Type: Number
     Default: 30
     Description: The number of day to keep the key pair in KeypairsBucket
-  labRegion:
-    Type: String
-    Default: ap-northeast-1
-    Description: AWS region code (Must have Lambda!) i.e. ap-northeast-1
   cloudformationS3Bucket:
     Type: String
-    Default: cloudformation2.cloudlabhk.com
+    Default: awscloudlab-cloudformation
     Description: Bucket store all Cloudformation templates and Lambda packages for Lab Environment.
   labWorkExpirationInDays:
     Type: Number
@@ -32,7 +28,7 @@ Parameters:
     Description: The number of day to keep the student lab work in lab Work bucket.
   labWorkBucket:
     Type: String
-    Default: labwork.cloudlabhk.com
+    Default: awscloudlab-labwork
     Description: Bucket Store student works.
   senderEmail:
     Type: String
@@ -41,7 +37,12 @@ Parameters:
   sesRegion:
     Type: String
     Default: ""
-    Description: SES Region code. If SES Region is defined, then system will use SES to send all email.
+    AllowedValues:
+      - ""
+      - eu-west-1
+      - us-east-1
+      - us-west-2
+    Description: SES Region. If SES Region is defined, then system will use SES to send all emails.
   smtpHost:
     Type: String
     Default: smtp.gmail.com
@@ -142,8 +143,8 @@ Resources:
       Description: AWS Cloud Lab Builder
       Timeout: 180
       Handler: createLabLambda.handler
-      Runtime: nodejs6.10
-      MemorySize: 512
+      Runtime: nodejs4.3
+      MemorySize: 1024
       CodeUri:
         Bucket: !Ref SourceBucket
         Key: awscloudlab_latest.zip
@@ -197,7 +198,7 @@ Resources:
       Description: AWS Cloud Lab Terminator
       Timeout: 180
       Handler: deleteLabStackLambda.handler
-      Runtime: nodejs6.10
+      Runtime: nodejs4.3
       MemorySize: 512
       CodeUri:
         Bucket: !Ref SourceBucket
@@ -253,7 +254,7 @@ Resources:
       Description: AWS Cloud Lab End Lab
       Timeout: 180
       Handler: deleteLabStackLambda.handler
-      Runtime: nodejs6.10
+      Runtime: nodejs4.3
       MemorySize: 512
       CodeUri:
         Bucket: !Ref SourceBucket
@@ -313,7 +314,7 @@ Resources:
       Description: AWS Cloud Lab End Lab AMI
       Timeout: 180
       Handler: endLabAmisLambda.handler
-      Runtime: nodejs6.10
+      Runtime: nodejs4.3
       MemorySize: 128
       CodeUri:
         Bucket: !Ref SourceBucket
@@ -367,7 +368,7 @@ Resources:
       Description: AWS Cloud Lab Initial Data
       Timeout: 180
       Handler: dbInit.handler
-      Runtime: nodejs6.10
+      Runtime: nodejs4.3
       MemorySize: 128
       CodeUri:
         Bucket: !Ref SourceBucket
@@ -390,7 +391,7 @@ Resources:
           KeypairsBucket: !Ref KeypairsBucket
           UserListBucket: !Ref UserListBucket
           KeypairExpirationInDays: !Ref KeypairExpirationInDays
-          labRegion: !Ref labRegion
+          labRegion: !Ref AWS::Region
           cloudformationS3Bucket: !Ref cloudformationS3Bucket
           expirationInDays: !Ref labWorkExpirationInDays
           labWorkBucket: !Ref labWorkBucket
@@ -433,7 +434,6 @@ Resources:
 # S3 Bucket
   KeypairsS3Bucket:
     Type: AWS::S3::Bucket
-#    DeletionPolicy: Retain
     Properties:
       AccessControl: Private
       BucketName:
@@ -444,8 +444,8 @@ Resources:
           Status: Enabled
           ExpirationInDays:
             Ref: KeypairExpirationInDays
+  LabWorkS3Bucket:
     Type: AWS::S3::Bucket
-#    DeletionPolicy: Retain
     Properties:
       AccessControl: Private
       BucketName:
@@ -458,11 +458,16 @@ Resources:
             Ref: labWorkExpirationInDays
   UserListS3Bucket:
     Type: AWS::S3::Bucket
-#    DeletionPolicy: Retain
     Properties:
       AccessControl: Private
       BucketName:
         Ref: UserListBucket
+  CloudformationS3Bucket:
+      Type: AWS::S3::Bucket
+      Properties:
+        AccessControl: Private
+        BucketName:
+          Ref: cloudformationS3Bucket
 
 # DynamoDB
   configureDynamoDBTable:
@@ -538,7 +543,6 @@ Metadata:
         Label:
           default: "System Configuration"
         Parameters:
-          - labRegion
           - KeypairsBucket
           - KeypairExpirationInDays
           - UserListBucket
@@ -552,7 +556,7 @@ Metadata:
           - stmpUser
       -
         Label:
-          default: "First Lab Configuration"
+          default: "First Course Configuration"
         Parameters:
           - teacherEmail
           - teacherCalenderIcsUrl
@@ -573,8 +577,6 @@ Metadata:
         default: "User List Bucket"
       KeypairExpirationInDays:
         default: "Key pair Expiration In Days"
-      labRegion:
-        default: "Lab Running Region"
       cloudformationS3Bucket:
         default: "Lab Cloudformation and Lambda Package Bucket"
       labWorkExpirationInDays:
@@ -592,9 +594,9 @@ Metadata:
       stmpUser:
         default: "SMTP User"
       teacherEmail:
-        default: "Teacher Email"
+        default: "Course Teacher Email"
       teacherCalenderIcsUrl:
-        default: "Teacher Calender ICS Url"
+        default: "Course Teacher Public Calender ICS Url"
       teacherCourse:
         default: "Course Name"
       imageId:
