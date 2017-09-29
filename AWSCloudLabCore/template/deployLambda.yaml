@@ -83,7 +83,7 @@ Resources:
         - Arn
       Timeout: 60
       Handler: deleteLabEventHandlerLambda.handler
-      Runtime: nodejs4.3
+      Runtime: nodejs6.10
       MemorySize: 128
   ScheduledRule:
     Type: AWS::Events::Rule
@@ -194,7 +194,7 @@ Resources:
         - Arn
       Timeout: 120
       Handler: emailloginLambda.handler
-      Runtime: nodejs4.3
+      Runtime: nodejs6.10
       MemorySize: 128
   KeyPairsExecutionRole:
     Type: AWS::IAM::Role
@@ -265,7 +265,7 @@ Resources:
         - Arn
       Timeout: 120
       Handler: keypairLambda.handler
-      Runtime: nodejs4.3
+      Runtime: nodejs6.10
       MemorySize: 128
 Outputs:
   EmailLoginFunctionArn:

@@ -75,6 +75,12 @@ exports.handler = (event, context, callback) => {
         let key = context.keyName + ".pem";
         let filePathname = "/tmp/key/" + context.keyName.replace(/[^A-Za-z0-9]/g, '') + ".pem";
 
+        let fs = require('fs');
+        let dir = '/tmp/key/';
+        if (!fs.existsSync(dir)) {
+            fs.mkdirSync(dir);
+        }
+
         let s3Manager = new S3Manager(region, keypairsBucket);
         s3Manager.getObject(key, filePathname).then(() => {
             context.pemKeyFilePathname = filePathname;

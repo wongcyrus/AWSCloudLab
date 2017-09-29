@@ -1,6 +1,5 @@
 "use strict";
-const archiver = require('archiver');
-const fs = require('fs');
+const zipdir = require('zip-dir');
 
 class ZipFile {
     constructor(options) {
@@ -10,20 +9,13 @@ class ZipFile {
 
     zip() {
         return new Promise((resolve, reject) => {
-            let archive = archiver.create('zip', {});
-            let output = fs.createWriteStream(this.destinationZip);
-
-            output.on('close', resolve);
-            archive.on('error', reject);
-            archive.pipe(output);
-
-            archive.directory(this.sourceDirectory, false);
-            archive.finalize();
+            zipdir(this.sourceDirectory, {saveTo: this.destinationZip}, function (err, buffer) {
+                if (err) reject(err);
+                console.log("done");
+                resolve();
+            });
         });
-    };
-
-
+    }
 }
-
 
 module.exports = ZipFile;

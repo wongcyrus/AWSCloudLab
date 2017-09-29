@@ -22,14 +22,14 @@ Parameters:
     Type: String
     Default: awscloudlab-cloudformation
     Description: Bucket store all Cloudformation templates and Lambda packages for Lab Environment.
-  labWorkExpirationInDays:
-    Type: Number
-    Default: 180
-    Description: The number of day to keep the student lab work in lab Work bucket.
   labWorkBucket:
     Type: String
     Default: awscloudlab-labwork
     Description: Bucket Store student works.
+  labWorkExpirationInDays:
+    Type: Number
+    Default: 180
+    Description: The number of day to keep the student lab work in lab Work bucket.
   senderEmail:
     Type: String
     Default: cloudlabaws@gmail.com
@@ -143,7 +143,7 @@ Resources:
       Description: AWS Cloud Lab Builder
       Timeout: 180
       Handler: createLabLambda.handler
-      Runtime: nodejs4.3
+      Runtime: nodejs6.10
       MemorySize: 1024
       CodeUri:
         Bucket: !Ref SourceBucket
@@ -198,7 +198,7 @@ Resources:
       Description: AWS Cloud Lab Terminator
       Timeout: 180
       Handler: deleteLabStackLambda.handler
-      Runtime: nodejs4.3
+      Runtime: nodejs6.10
       MemorySize: 512
       CodeUri:
         Bucket: !Ref SourceBucket
@@ -253,8 +253,8 @@ Resources:
       FunctionName: AWSCloudLabEndedLab
       Description: AWS Cloud Lab End Lab
       Timeout: 180
-      Handler: deleteLabStackLambda.handler
-      Runtime: nodejs4.3
+      Handler: endLabStackLambda.handler
+      Runtime: nodejs6.10
       MemorySize: 512
       CodeUri:
         Bucket: !Ref SourceBucket
@@ -314,7 +314,7 @@ Resources:
       Description: AWS Cloud Lab End Lab AMI
       Timeout: 180
       Handler: endLabAmisLambda.handler
-      Runtime: nodejs4.3
+      Runtime: nodejs6.10
       MemorySize: 128
       CodeUri:
         Bucket: !Ref SourceBucket
@@ -362,13 +362,14 @@ Resources:
               - !Sub arn:aws:dynamodb:${AWS::Region}:${AWS::AccountId}:table/calendar
               - !Sub arn:aws:dynamodb:${AWS::Region}:${AWS::AccountId}:table/lab
 
+
   AWSCloudLabDBInitFunction:
     Type: AWS::Serverless::Function
     Properties:
       Description: AWS Cloud Lab Initial Data
       Timeout: 180
       Handler: dbInit.handler
-      Runtime: nodejs4.3
+      Runtime: nodejs6.10
       MemorySize: 128
       CodeUri:
         Bucket: !Ref SourceBucket

@@ -64,12 +64,17 @@ class S3Manager {
             let params = {Bucket: this.bucket, Key: key};
             let file = require('fs').createWriteStream(filePathname);
 
+            file.on('close', function () {
+                console.log('file done'); //prints, file created
+                resolve();
+            });
+
             s3.getObject(params).createReadStream()
                 .on('end', () => {
-                    return resolve();
+                    console.log('s3 done');
                 })
                 .on('error', (error) => {
-                    return reject(error);
+                    reject(error);
                 })
                 .pipe(file)
         });

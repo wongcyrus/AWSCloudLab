@@ -1,13 +1,11 @@
 "use strict";
 const AWS = require('aws-sdk');
 const cons = require('consolidate');
-const mailcomposer = require("mailcomposer");
 
 const DynamodbManager = require('./lib/DynamodbManager');
 const CloudformationManager = require('./lib/CloudformationManager');
 const EmailManager = require('./lib/EmailManager');
 const Ec2Manager = require('./lib/Ec2Manager');
-const S3Manager = require('./lib/S3Manager');
 
 const projectId = "awscloudlab";
 

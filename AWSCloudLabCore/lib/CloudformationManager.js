@@ -83,10 +83,10 @@ class CloudformationManager {
         });
 
         let zipDeployment = () => new Promise((resolve, reject) => {
-            console.log("zipDeployment");
+            console.log("Zip Deployment");
 
             let zipFile = new ZipFile({
-                sourceDirectory: '/tmp/DeleteStack',
+                sourceDirectory: '/tmp/DeleteStack/',
                 destinationZip: zipPath
             });
 

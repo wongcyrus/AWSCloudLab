@@ -17,10 +17,10 @@ class EmailManager {
             from: this.senderEmail,
             to: to,
             subject: subject,
-            body: textMessage,
             text: textMessage,
             html: htmlMessage
         };
+
         if (attachmentFilePath) {
             let segments = attachmentFilePath.split("/");
             options.attachments = [{   // file on disk as an attachment
@@ -29,14 +29,17 @@ class EmailManager {
             }]
         }
         return new Promise((resolve, reject) => {
-            if (this.sesRegion) {
-                let ses = new AWS.SES({region: this.sesRegion});
+            console.log(options);
+            if (this.sesRegion && this.sesRegion !== "") {
+                AWS.config.update({region: this.sesRegion});
+                let ses = new AWS.SES();
                 let mail = new MailComposer(options);
                 mail.compile().build((err, messageSource) => {
                     if (err) {
                         reject(err);
                     } else {
                         ses.sendRawEmail({RawMessage: {Data: messageSource}}, (err, data) => {
+                            AWS.config.update({region: process.env.AWS_REGION});
                             if (err) {
                                 reject(err, err.stack);
                             } else {
@@ -47,7 +50,8 @@ class EmailManager {
                 });
             } else {
                 // create reusable transporter object using the default SMTP transport
-                let transporter = nodemailer.createTransport({
+
+                let connect = {
                     host: this.smtpHost,
                     port: 465,
                     secure: true, // secure:true for port 465, secure:false for port 587
@@ -55,7 +59,10 @@ class EmailManager {
                         user: this.stmpUser,
                         pass: this.smtpPassword
                     }
-                });
+                };
+                console.log(connect);
+
+                let transporter = nodemailer.createTransport(connect);
 
                 // send mail with defined transport object
                 transporter.sendMail(options, (error, info) => {

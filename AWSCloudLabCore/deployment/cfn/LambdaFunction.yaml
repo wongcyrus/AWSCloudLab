@@ -254,7 +254,7 @@ Resources:
         - Arn
       Timeout: 180
       Handler: createLabLambda.handler
-      Runtime: nodejs4.3
+      Runtime: nodejs6.10
       MemorySize: 512
   AWSCloudLabTerminatorFunction:
     Type: AWS::Lambda::Function
@@ -274,7 +274,7 @@ Resources:
         - Arn
       Timeout: 180
       Handler: deleteLabStackLambda.handler
-      Runtime: nodejs4.3
+      Runtime: nodejs6.10
       MemorySize: 128
   AWSCloudLabEndLabFunction:
     Type: AWS::Lambda::Function
@@ -294,7 +294,7 @@ Resources:
         - Arn
       Timeout: 180
       Handler: endLabStackLambda.handler
-      Runtime: nodejs4.3
+      Runtime: nodejs6.10
       MemorySize: 128
   AWSCloudLabEndLabAmiFunction:
     Type: AWS::Lambda::Function
@@ -314,7 +314,7 @@ Resources:
         - Arn
       Timeout: 180
       Handler: endLabAmisLambda.handler
-      Runtime: nodejs4.3
+      Runtime: nodejs6.10
       MemorySize: 128
   PermissionForEventsToInvokeAWSCloudLabEndLabLambda:
     Type: AWS::Lambda::Permission
