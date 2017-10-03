@@ -6,6 +6,7 @@ const Ec2Manager = require('./lib/Ec2Manager');
 const DynamodbManager = require('./lib/DynamodbManager');
 const UseRepository = require('./lib/UseRepository');
 const CloudformationManager = require('./lib/CloudformationManager');
+const emptyDir = require('empty-dir');
 
 //Constant
 const projectId = "awscloudlab",
@@ -18,6 +19,8 @@ exports.handler = (event, context, callback) => {
     AWS.config.update({region: region});
     console.log("Current region:" + region);
     console.log(event);
+
+    console.log('Directory is empty:', emptyDir.sync('/tmp/'));
 
     createLab(event, context, callback, region, event);
 };

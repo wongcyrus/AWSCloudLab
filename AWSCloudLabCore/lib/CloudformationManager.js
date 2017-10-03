@@ -73,6 +73,9 @@ class CloudformationManager {
             console.log("copyDependencies");
             let tempFolder = "/tmp/DeleteStack";
 
+            const emptyDir = require('empty-dir');
+            console.log(tempFolder + ' Directory is empty:', emptyDir.sync(tempFolder));
+
             fs.copyRecursive(__dirname + "/../", tempFolder, err => {
                 if (err) {
                     reject(err);

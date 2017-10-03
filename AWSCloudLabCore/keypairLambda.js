@@ -3,8 +3,11 @@ const AWS = require('aws-sdk');
 const response = require('cfn-response');
 
 const KeyPairManager = require('./lib/KeyPairManager');
+const emptyDir = require('empty-dir');
 
 exports.handler = (event, context, callback) => {
+    let result = emptyDir.sync('/tmp/');
+    console.log('Directory is empty:', result);
 
     let region = process.env.AWS_REGION;
     AWS.config.update({region: region});

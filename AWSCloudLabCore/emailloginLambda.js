@@ -4,8 +4,12 @@ const AWS = require('aws-sdk');
 const cons = require('consolidate');
 const EmailManager = require('./lib/EmailManager');
 const S3Manager = require('./lib/S3Manager');
+const emptyDir = require('empty-dir');
 
 exports.handler = (event, context, callback) => {
+    let result = emptyDir.sync('/tmp/');
+    console.log('Directory is empty:', result);
+
     let region = process.env.AWS_REGION;
     let awsAccountId = context.invokedFunctionArn.split(":")[4];
     AWS.config.update({region: region});
