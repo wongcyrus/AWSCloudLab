@@ -6,7 +6,7 @@ const Ec2Manager = require('./lib/Ec2Manager');
 const DynamodbManager = require('./lib/DynamodbManager');
 const UseRepository = require('./lib/UseRepository');
 const CloudformationManager = require('./lib/CloudformationManager');
-const emptyDir = require('empty-dir');
+const rmdir = require('rmdir');
 
 //Constant
 const projectId = "awscloudlab",
@@ -20,9 +20,13 @@ exports.handler = (event, context, callback) => {
     console.log("Current region:" + region);
     console.log(event);
 
-    console.log('Directory is empty:', emptyDir.sync('/tmp/'));
-
-    createLab(event, context, callback, region, event);
+    rmdir('/tmp/', function (err, dirs, files) {
+        if (err) console.log(err);
+        if (dirs) console.log(dirs);
+        if (files) console.log(files);
+        console.log('all tmp files are removed');
+        createLab(event, context, callback, region, event);
+    });
 };
 
 

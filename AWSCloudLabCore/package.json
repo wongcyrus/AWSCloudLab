@@ -21,7 +21,7 @@
     "randomstring": "^1.1.5",
     "underscore": "~1.8.3",
     "zip-dir": "^1.0.2",
-    "empty-dir": "^0.2.1"
+    "rmdir": "^1.2.0"
   },
   "devDependencies": {
     "grunt": "^1.0.1",

@@ -32,7 +32,7 @@ Parameters:
     Description: The number of day to keep the student lab work in lab Work bucket.
   senderEmail:
     Type: String
-    Default: cloudlabaws@gmail.com
+    Default: cy.gdoc@gmail.com
     Description: System sender email address
   sesRegion:
     Type: String
@@ -45,16 +45,16 @@ Parameters:
     Description: SES Region. If SES Region is defined, then system will use SES to send all emails.
   smtpHost:
     Type: String
-    Default: smtp.gmail.com
+    Default: email-smtp.us-east-1.amazonaws.com
     Description: SMTP Host, if SES Region is not empty string.
   smtpPassword:
     Type: String
-    Default: 39282662
+    Default: AsvzP5DP9ytXaZ/pNmN/4bl6eFgHL78G33hKWaqELuw7
     NoEcho: true
     Description: SMTP server login password, if SES Region is not empty string.
   stmpUser:
     Type: String
-    Default: cloudlabaws@gmail.com
+    Default: AKIAIKWPMS2VFUW7PQUA
     Description: SMTP server login user, if SES Region is not empty string.
   teacherEmail:
     Type: String

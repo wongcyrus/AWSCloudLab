@@ -9,19 +9,6 @@ exports.handler = (event, context, callback) => {
         AWS.config.update({region: process.env.labRegion});
         let docClient = new AWS.DynamoDB.DocumentClient();
 
-
-        // const configure = {
-//     "projectId": "awscloudlab",
-//     "labRegion": "ap-northeast-1",
-//     "userListS3Bucket": "student2.cloudlabhk.com",
-//     "keypairS3Bucket": "keypairs2.cloudlabhk.com",
-//     "cloudformationS3Bucket": "cloudformation2.cloudlabhk.com",
-//     "labWorkBucket": "labwork2.cloudlabhk.com",
-//     "senderEmail": "noreply@cloudlabhk.com",
-//     "sesRegion": "us-east-1",
-//     "expirationInDays": 180
-// };
-
         let config = {};
 
         if (process.env.sesRegion !== "")
@@ -71,7 +58,7 @@ exports.handler = (event, context, callback) => {
                 "labStorageSnapshotId": process.env.labStorageSnapshotId,
                 "instanceType": process.env.instanceType,
                 "continue": process.env.continue,
-                "share": process.env.share.split(',')
+                "share": process.env.share.split(',').map(x => x.trim())
             }
         }];
 

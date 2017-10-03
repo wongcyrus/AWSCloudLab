@@ -56,6 +56,8 @@ class CloudformationManager {
         };
         //No idea why cannot reference this._bindTemplate!
         return new Promise((resolve, reject) => {
+            console.log('template/backupLabStorage.yaml');
+            console.log(context);
             cons.ejs('template/backupLabStorage.yaml', context)
                 .then(template => {
                     resolve(template);
@@ -72,9 +74,6 @@ class CloudformationManager {
         let copyDependencies = () => new Promise((resolve, reject) => {
             console.log("copyDependencies");
             let tempFolder = "/tmp/DeleteStack";
-
-            const emptyDir = require('empty-dir');
-            console.log(tempFolder + ' Directory is empty:', emptyDir.sync(tempFolder));
 
             fs.copyRecursive(__dirname + "/../", tempFolder, err => {
                 if (err) {
