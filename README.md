@@ -22,15 +22,11 @@ https://www.linkedin.com/pulse/aws-cloud-lab-one-more-real-educational-use-case-
 (Marking Accelerator has moved to a new project. )
 
 ##Creator
-Mr. Cyrus Wong, R&D Coordinator (Data Scientist & AWS certified Professional) of Cloud Innovation Centre - IVE (Lee Wai Lee) - Department of Information Technology, and the first AWS All 5 Certified Chinese in Hong Kong.
-- AWS Certified DevOps Engineer – Professional 
-- AWS Certified Solutions Architect – Professional
-- AWS Certified Solutions Architect – Associate
-- AWS Certified SysOps Administrator – Associate
-- AWS Certified Developer - Associate
+Mr. Cyrus Wong, R&D Coordinator (Data Scientist & AWS certified Professional) of Cloud Innovation Centre - IVE (Lee Wai Lee) - Department of Information Technology, and the AWS All 7 Certified Community Hero of Hong Kong.
 
 Linkedin 		https://hk.linkedin.com/in/cyruswong
 
+AWS Community Hero https://aws.amazon.com/tw/heroes/asia-pacific/cyrus-wong/
 
 ##How to setup and configure
 
@@ -107,5 +103,3 @@ email, role (teacher or student), and awsAccount (Student AWS account number for
 
 - FILENAME MUST MATCH COURSE NAME!
 - EXCEL must be XLXS.
- 
-
