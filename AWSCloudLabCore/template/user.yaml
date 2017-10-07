@@ -13,12 +13,12 @@
             Action:
             - ec2:DescribeInstances
             - ec2:GetPasswordData
-          - Condition:
-              StringEquals:
-                ec2:ResourceTag/Owner: "<%-user.email%>"
-            Effect: Allow
+          - Effect: Allow
             Resource: "*"
             Action:
             - ec2:RebootInstances
             - ec2:DescribeInstanceAttribute
             - ec2:DescribeInstanceStatus
+            Condition:
+              StringEquals:
+                ec2:ResourceTag/Owner: "<%-user.email%>"

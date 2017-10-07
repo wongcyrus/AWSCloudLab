@@ -36,6 +36,20 @@
       InstanceType:
         Ref: InstanceType
       KeyName: "<%-user.key%>"
+      UserData:
+        'Fn::Base64': !Sub |
+            <powershell>
+            $url = "https://s3.amazonaws.com/ec2-downloads-windows/SSMAgent/latest/windows_amd64/AmazonSSMAgentSetup.exe"
+            $output = "$PSScriptRoot\AmazonSSMAgentSetup.exe"
+            $start_time = Get-Date
+            (New-Object System.Net.WebClient).DownloadFile($url, $output)
+            Write-Output "Time taken: $((Get-Date).Subtract($start_time).Seconds) second(s)"
+
+            Set-ExecutionPolicy bypass
+            Set-Location $PSScriptRoot
+            Start-Process $output -ArgumentList "/s" -Wait
+            Restart-Service AmazonSSMAgent
+            </powershell>
       AvailabilityZone:
         Fn::GetAtt:
         - Subnet
@@ -62,6 +76,12 @@
           Ref: CFNUser<%-i%>
       - Key: Password
         Value: "<%-user.password%>"
+      IamInstanceProfile:
+#    <%if (user.role=='student') { %>
+        Ref: StudentEC2InstanceProfile
+#    <% }else{ %>
+        Ref: TeacherEC2InstanceProfile
+#    <%}%>
       NetworkInterfaces:
       - GroupSet:
         - Ref: InstanceSecurityGroup
@@ -70,3 +90,11 @@
         DeleteOnTermination: 'true'
         SubnetId:
           Ref: Subnet
+
+  DocumentAssociation<%-i%>:
+    Type: AWS::SSM::Association
+    Properties:
+      Name: !Ref EnableOfflineDiskDocument
+      Targets:
+      - Key: InstanceIds
+        Values: [!Ref StudentInstance<%-i%>]

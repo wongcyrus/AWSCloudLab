@@ -55,6 +55,12 @@
           Ref: CFNUser<%-i%>
       - Key: Password
         Value: "<%-user.password%>"
+      IamInstanceProfile:
+#    <%if (user.role=='student') { %>
+        Ref: StudentEC2InstanceProfile
+#    <% }else{ %>
+        Ref: TeacherEC2InstanceProfile
+#    <%}%>
       NetworkInterfaces:
       - GroupSet:
         - Ref: InstanceSecurityGroup
@@ -63,3 +69,11 @@
         DeleteOnTermination: 'true'
         SubnetId:
           Ref: Subnet
+
+  DocumentAssociation<%-i%>:
+    Type: AWS::SSM::Association
+    Properties:
+      Name: !Ref EnableOfflineDiskDocument
+      Targets:
+      - Key: InstanceIds
+        Values: [!Ref StudentInstance<%-i%>]
