@@ -1,5 +1,5 @@
-AWSTemplateFormatVersion: "2010-09-09"
-Transform: 'AWS::Serverless-2016-10-31'
+AWSTemplateFormatVersion: 2010-09-09
+Transform: AWS::Serverless-2016-10-31
 Description: AWS Cloud Lab SAM Deployment
 Parameters:
   SourceBucket:
@@ -98,7 +98,7 @@ Parameters:
 
 Resources:
   AWSCloudLabSchedulerFunction:
-    Type: 'AWS::Serverless::Function'
+    Type: AWS::Serverless::Function
     Properties:
       FunctionName: AWSCloudLabScheduler
       Description: AWS Cloud Lab Scheduler
@@ -137,7 +137,7 @@ Resources:
             Schedule: cron(0/15 * * * ? *)
 
   AWSCloudLabBuilderFunction:
-    Type: 'AWS::Serverless::Function'
+    Type: AWS::Serverless::Function
     Properties:
       FunctionName: AWSCloudLabBuilder
       Description: AWS Cloud Lab Builder
@@ -193,7 +193,7 @@ Resources:
               - !Sub arn:aws:dynamodb:${AWS::Region}:${AWS::AccountId}:table/lab
 
   AWSCloudLabTerminatorFunction:
-    Type: 'AWS::Serverless::Function'
+    Type: AWS::Serverless::Function
     Properties:
       FunctionName: AWSCloudLabTerminator
       Description: AWS Cloud Lab Terminator
@@ -249,7 +249,7 @@ Resources:
               - !Sub arn:aws:dynamodb:${AWS::Region}:${AWS::AccountId}:table/lab
 
   AWSCloudLabEndLabFunction:
-    Type: 'AWS::Serverless::Function'
+    Type: AWS::Serverless::Function
     DependsOn: AWSCloudLabDeletedTopic
     Properties:
       FunctionName: AWSCloudLabEndedLab
@@ -310,7 +310,7 @@ Resources:
             Topic: !Sub arn:aws:sns:${AWS::Region}:${AWS::AccountId}:AWSCloudLabStackEvent
 
   AWSCloudLabEndLabAmiFunction:
-    Type: 'AWS::Serverless::Function'
+    Type: AWS::Serverless::Function
     Properties:
       FunctionName: AWSCloudLabEndLabAmi
       Description: AWS Cloud Lab End Lab AMI
@@ -484,8 +484,8 @@ Resources:
       - AttributeName: projectId
         KeyType: HASH
       ProvisionedThroughput:
-        ReadCapacityUnits: '1'
-        WriteCapacityUnits: '1'
+        ReadCapacityUnits: 1
+        WriteCapacityUnits: 1
   courseDynamoDBTable:
     Type: AWS::DynamoDB::Table
     Properties:
@@ -501,8 +501,8 @@ Resources:
       - AttributeName: teacher
         KeyType: RANGE
       ProvisionedThroughput:
-        ReadCapacityUnits: '1'
-        WriteCapacityUnits: '1'
+        ReadCapacityUnits: 1
+        WriteCapacityUnits: 1
   calendarDynamoDBTable:
     Type: AWS::DynamoDB::Table
     Properties:
@@ -518,8 +518,8 @@ Resources:
       - AttributeName: icsUrl
         KeyType: RANGE
       ProvisionedThroughput:
-        ReadCapacityUnits: '1'
-        WriteCapacityUnits: '1'
+        ReadCapacityUnits: 1
+        WriteCapacityUnits: 1
   labDynamoDBTable:
     Type: AWS::DynamoDB::Table
     Properties:
@@ -531,8 +531,8 @@ Resources:
       - AttributeName: id
         KeyType: HASH
       ProvisionedThroughput:
-        ReadCapacityUnits: '1'
-        WriteCapacityUnits: '1'
+        ReadCapacityUnits: 1
+        WriteCapacityUnits: 1
 
 # DynamoDB AutoScaling
 
@@ -559,11 +559,7 @@ Resources:
                   - dynamodb:DescribeTable
                   - dynamodb:UpdateTable
                 Resource:
-                  - Fn::Join:
-                      - ""
-                      - - "arn:aws:dynamodb:"
-                        - !Ref AWS::Region
-                        - ":*:table/*"
+                  - !Sub arn:aws:dynamodb:${AWS::Region}:${AWS::AccountId}:table/*
               - Effect: Allow
                 Action:
                   - cloudwatch:DescribeAlarms
@@ -760,12 +756,12 @@ Metadata:
     ParameterGroups:
       -
         Label:
-          default: "Deployment"
+          default: Deployment
         Parameters:
           - SourceBucket
       -
         Label:
-          default: "System Configuration"
+          default: System Configuration
         Parameters:
           - KeypairsBucket
           - KeypairExpirationInDays
@@ -780,7 +776,7 @@ Metadata:
           - stmpUser
       -
         Label:
-          default: "First Course Configuration"
+          default: First Course Configuration
         Parameters:
           - teacherEmail
           - teacherCalenderIcsUrl
@@ -794,44 +790,44 @@ Metadata:
           - continue
     ParameterLabels:
       SourceBucket:
-        default: "Source Bucket"
+        default: Source Bucket
       KeypairsBucket:
-        default: "EC2 Key pair Bucket"
+        default: EC2 Key pair Bucket
       UserListBucket:
-        default: "User List Bucket"
+        default: User List Bucket
       KeypairExpirationInDays:
-        default: "Key pair Expiration In Days"
+        default: Key pair Expiration In Days
       cloudformationS3Bucket:
-        default: "Lab Cloudformation and Lambda Package Bucket"
+        default: Lab Cloudformation and Lambda Package Bucket
       labWorkExpirationInDays:
-        default: "Lab Work Expiration In Days"
+        default: Lab Work Expiration In Days
       labWorkBucket:
-        default: "Student Lab Work Bucket"
+        default: Student Lab Work Bucket
       senderEmail:
-        default: "Sender Email"
+        default: Sender Email
       sesRegion:
-        default: "SES Region"
+        default: SES Region
       smtpHost:
-        default: "SMTP Host"
+        default: SMTP Host
       smtpPassword:
-        default: "SMTP Password"
+        default: SMTP Password
       stmpUser:
-        default: "SMTP User"
+        default: SMTP User
       teacherEmail:
-        default: "Course Teacher Email"
+        default: Course Teacher Email
       teacherCalenderIcsUrl:
-        default: "Course Teacher Public Calender ICS Url"
+        default: Course Teacher Public Calender ICS Url
       teacherCourse:
-        default: "Course Name"
+        default: Course Name
       imageId:
-        default: "Lab EC2 AMI"
+        default: Lab EC2 AMI
       labMaterialSnapshotId:
-        default: "Lab Material Snapshot ID"
+        default: Lab Material Snapshot ID
       labStorageSnapshotId:
-        default: "Lab Storage Snapshot ID"
+        default: Lab Storage Snapshot ID
       instanceType:
-        default: "Instance Type"
+        default: Instance Type for Lab
       share:
-        default: "Share Mode"
+        default: Share Mode
       continue:
-        default: "Is Continue"
+        default: Is Continue
