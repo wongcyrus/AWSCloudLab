@@ -19,7 +19,7 @@ exports.handler = (event, context, callback) => {
     let ec2Manager = new Ec2Manager();
     let cloudformationManager = new CloudformationManager();
 
-    let getConfigure = ()=> new Promise((resolve, reject)=> {
+    let getConfigure = () => new Promise((resolve, reject) => {
         console.log("Get Configure");
         let dynamodbManager = new DynamodbManager(region);
         dynamodbManager.getItem("configure", {projectId}).then(
@@ -27,7 +27,7 @@ exports.handler = (event, context, callback) => {
             err => reject(err)
         );
     });
-    let getLab = stackName=> new Promise((resolve, reject)=> {
+    let getLab = stackName => new Promise((resolve, reject) => {
         console.log("Get Lab");
         let dynamodbManager = new DynamodbManager(region);
         dynamodbManager.getItem("lab", {id: stackName}).then(
@@ -35,7 +35,7 @@ exports.handler = (event, context, callback) => {
             err => reject(err)
         );
     });
-    let getCourse = courseAndTeacher=> new Promise((resolve, reject)=> {
+    let getCourse = courseAndTeacher => new Promise((resolve, reject) => {
         console.log("Get course");
         let dynamodbManager = new DynamodbManager(region);
         dynamodbManager.getItem("course", courseAndTeacher).then(
@@ -45,7 +45,7 @@ exports.handler = (event, context, callback) => {
     });
 
 
-    let getLabStackId = (message)=> {
+    let getLabStackId = (message) => {
         let keypairMap = new Map();
         message.split('\n').forEach(line => keypairMap.set(line.split("=")[0], (line.split("=")[1] + "").replace(/'/g, "")));
 
@@ -58,9 +58,9 @@ exports.handler = (event, context, callback) => {
     };
 
 
-    let shareSnapshot = context=> new Promise((resolveAll, rejectAll)=> {
+    let shareSnapshot = context => new Promise((resolveAll, rejectAll) => {
 
-        let validToShare = resource =>course.share.find(x=>x === resource) && context[resource] && context[resource] !== "";
+        let validToShare = resource => course.share.find(x => x === resource) && context[resource] && context[resource] !== "";
         let sharePromises = [];
         if (validToShare("labStorageSnapshotId")) {
             console.log("Share labStorageSnapshotId:" + context.labStorageSnapshotId + " to " + context.awsAccountId);
@@ -79,12 +79,12 @@ exports.handler = (event, context, callback) => {
             resolveAll(context);
         } else {
             Promise.all(sharePromises)
-                .then(()=> resolveAll(context))
+                .then(() => resolveAll(context))
                 .catch(rejectAll);
         }
     });
 
-    let bindEmailTemplate = context => new Promise((resolve, reject)=> {
+    let bindEmailTemplate = context => new Promise((resolve, reject) => {
         console.log(context);
 
         context.labWorkBucket = configure.labWorkBucket;
@@ -92,16 +92,16 @@ exports.handler = (event, context, callback) => {
         if (course.share.find(x => x === "labStorageSnapshotId") === undefined) {
             context.labStorageSnapshotId = undefined;
         }
-        if (course.share.find(x=>x === "labMaterialSnapshotId")) {
+        if (course.share.find(x => x === "labMaterialSnapshotId")) {
             context.labMaterialSnapshotId = course.labMaterialSnapshotId;
             context.labMaterialSnapshotUrl = `https://${region}.console.aws.amazon.com/ec2/v2/home?region=${region}#Snapshots:visibility=private;search=${context.labMaterialSnapshotId}`;
         }
-        if (course.share.find(x=>x === "imageId")) {
+        if (course.share.find(x => x === "imageId")) {
             context.imageId = course.imageId;
             context.imageIdUrl = `https://${region}.console.aws.amazon.com/ec2/v2/home?region=${region}1#Images:visibility=private-images;search=${context.imageId}`;
         }
 
-        if (course.share.find(x=>x === "endLabAmi")) {
+        if (course.share.find(x => x === "endLabAmi")) {
             context.endLabImageIdUrl = `https://${region}.console.aws.amazon.com/ec2/v2/home?region=${region}#Images:visibility=private-images;imageId=${context.endLabAmi}`;
         }
 
@@ -117,40 +117,40 @@ exports.handler = (event, context, callback) => {
 
     let sendEmails = shareables => {
         let emailManager = new EmailManager(configure.senderEmail, configure.sesRegion, configure.smtpHost, configure.stmpUser, configure.smtpPassword);
-        return Promise.all(shareables.map(s=> emailManager.sendEmail(s.email, s.course.course + " End Lab Resources", s.emailBody, JSON.stringify(context))));
+        return Promise.all(shareables.map(s => emailManager.sendEmail(s.email, s.course.course + " End Lab Resources " + (new Date()).toDateString(), s.emailBody, JSON.stringify(context))));
     };
 
-
-    let sharingAndBackup = (studentResource)=> {
-        let lab = studentResource[0].lab, teacher = studentResource[0].teacher, course = studentResource[0].course.course;
+    let sharingAndBackup = (studentResource) => {
+        let lab = studentResource[0].lab, teacher = studentResource[0].teacher,
+            course = studentResource[0].course.course;
         let isValidateAwsAccountId = awsAccountId => (/^\d+$/.test(awsAccountId) && awsAccountId.length === 12);
-        let shareableResource = studentResource.filter(s=>isValidateAwsAccountId(s.awsAccountId));
+        let shareableResource = studentResource.filter(s => isValidateAwsAccountId(s.awsAccountId));
 
         let sendShareEmails;
-        if (studentResource[0].course.share.find(x=>x === "endLabAmi")) {
-            sendShareEmails = ()=> ec2Manager.getSharableImageIds(lab)
-                .then(images=> {
+        if (studentResource[0].course.share.find(x => x === "endLabAmi")) {
+            sendShareEmails = () => ec2Manager.getSharableImageIds(lab)
+                .then(images => {
                     console.log(images);
                     if (images.length > 0)
-                        shareableResource.map(s=> {
-                            s.endLabAmi = images.find(p=>p.email === s.email).imageId;
+                        shareableResource.map(s => {
+                            s.endLabAmi = images.find(p => p.email === s.email).imageId;
                             return s;
                         });
                     else shareableResource;
                 })
-                .then(()=> Promise.all(shareableResource.map(shareSnapshot)))
-                .then(()=> Promise.all(shareableResource.map(bindEmailTemplate)))
+                .then(() => Promise.all(shareableResource.map(shareSnapshot)))
+                .then(() => Promise.all(shareableResource.map(bindEmailTemplate)))
                 .then(sendEmails);
         }
         else {
-            sendShareEmails = ()=> Promise.all(shareableResource.map(shareSnapshot))
-                .then(()=> Promise.all(shareableResource.map(bindEmailTemplate)))
+            sendShareEmails = () => Promise.all(shareableResource.map(shareSnapshot))
+                .then(() => Promise.all(shareableResource.map(bindEmailTemplate)))
                 .then(sendEmails);
         }
 
         console.log("Send back up email.");
         let backupToS3 = () => cloudformationManager.bindBackupCfnTemplate(studentResource, region, configure.labWorkBucket)
-            .then(template=>cloudformationManager.runEndLabCloudformation(lab, teacher, course, template, region));
+            .then(template => cloudformationManager.runEndLabCloudformation(lab, teacher, course, template, region));
         return Promise.all([sendShareEmails(), backupToS3()]);
     };
 
@@ -159,31 +159,31 @@ exports.handler = (event, context, callback) => {
     let IsEc2Event = event => event.ResourceType === 'AWS::EC2::Instance' && event.ResourceStatus === 'CREATE_COMPLETE';
 
     let getUserFromInstanceTags = events => {
-        return new Promise((resolve, reject)=> {
-            ec2Manager.getInstances(events.filter(IsEc2Event).map(s=>s.PhysicalResourceId))
-                .then(o =>o.Reservations.map(r=>r.Instances).map(r=>r[0].Tags))
-                .then(tags=> tags.map(s=> {
+        return new Promise((resolve, reject) => {
+            ec2Manager.getInstances(events.filter(IsEc2Event).map(s => s.PhysicalResourceId))
+                .then(o => o.Reservations.map(r => r.Instances).map(r => r[0].Tags))
+                .then(tags => tags.map(s => {
                     console.log(s);
                     return {
-                        email: s.find(p=>p.Key === 'Owner').Value,
+                        email: s.find(p => p.Key === 'Owner').Value,
                         course: course,
-                        lab: s.find(p=>p.Key === 'lab').Value,
-                        teacher: s.find(p=>p.Key === 'teacher').Value,
-                        awsAccountId: s.find(p=>p.Key === 'AWSAccount').Value
+                        lab: s.find(p => p.Key === 'lab').Value,
+                        teacher: s.find(p => p.Key === 'teacher').Value,
+                        awsAccountId: s.find(p => p.Key === 'AWSAccount').Value
                     };
-                })).then(users => resolve(users), err=>reject(err));
+                })).then(users => resolve(users), err => reject(err));
         });
     };
 
     let getSnapshotIds = events => {
-        return new Promise((resolve, reject)=> {
-            ec2Manager.getSnapshots(events.filter(IsSnapshotEvent).map(s=>s.PhysicalResourceId))
-                .then(c=> c.Snapshots.map(s=> {
+        return new Promise((resolve, reject) => {
+            ec2Manager.getSnapshots(events.filter(IsSnapshotEvent).map(s => s.PhysicalResourceId))
+                .then(c => c.Snapshots.map(s => {
                     return {
                         labStorageSnapshotId: s.SnapshotId,
-                        email: s.Tags.find(p=>p.Key === 'Owner').Value
+                        email: s.Tags.find(p => p.Key === 'Owner').Value
                     };
-                })).then(snapshots => resolve(snapshots), err=>reject(err));
+                })).then(snapshots => resolve(snapshots), err => reject(err));
         });
     };
 
@@ -195,16 +195,16 @@ exports.handler = (event, context, callback) => {
 
         getLab(stackName)
             .then(getCourse)
-            .then(c=> {
+            .then(c => {
                 course = c;
                 return getConfigure()
             })
-            .then(c=> {
+            .then(c => {
                 configure = c;
                 return cloudformationManager.getStackEvents(stackId, region);
             })
-            .then(events=>
-                new Promise((resolveAll, rejectAll)=> {
+            .then(events =>
+                new Promise((resolveAll, rejectAll) => {
                         Promise.all([
                             getUserFromInstanceTags(events),
                             getSnapshotIds(events)
@@ -212,8 +212,8 @@ exports.handler = (event, context, callback) => {
                             console.log("users");
                             let users = results[0];
                             let snapshots = results[1];
-                            users = users.map(u=> {
-                                u.labStorageSnapshotId = snapshots.find(p=>p.email === u.email).labStorageSnapshotId;
+                            users = users.map(u => {
+                                u.labStorageSnapshotId = snapshots.find(p => p.email === u.email).labStorageSnapshotId;
                                 return u;
                             });
                             console.log(users);
@@ -225,7 +225,7 @@ exports.handler = (event, context, callback) => {
                 ))
             .then(sharingAndBackup)
             .then(message => callback(null, "Done!\n" + message))
-            .catch(err=>callback(err));
+            .catch(err => callback(err));
     }
     else {
         callback(null, "Not End Lab Stack!");

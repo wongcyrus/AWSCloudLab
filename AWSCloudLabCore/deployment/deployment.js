@@ -90,6 +90,10 @@ let createAWSCloudLabCreateStackSet = () => new Promise((resolve, reject) => {
             {
                 ParameterKey: 'dynamodbAutoscaling',
                 ParameterValue: "false"
+            },
+            {
+                ParameterKey: 'continue',
+                ParameterValue: "false"
             }
         ]
         ,
@@ -125,17 +129,32 @@ let createAWSCloudLabExecuteStackSet = (stackSetId) => new Promise((resolve, rej
     });
 });
 
+let invokeAWSCloudLabScheduler = (stackSetId) => new Promise((resolve, reject) => {
+    let lambda = new AWS.Lambda({region: configure.labRegion, apiVersion: '2015-03-31'});
+    let params = {
+        FunctionName: "AWSCloudLabScheduler",
+        InvokeArgs: ""
+    };
+    lambda.invokeAsync(params, function (err, data) {
+        if (err) console.log(err, err.stack); // an error occurred
+        else {
+            console.log(data);           // successful response
+            resolve(data);
+        }
+    });
+});
+
 let delay = (ms, data) => {
     return new Promise((resolve, reject) => {
-        console.log("Delay for " + ms + "ms. data" + data);
+        console.log("Delay for " + ms + "ms. " + data);
         setTimeout(() => resolve(data), ms); // (A)
     });
 };
 let delay1Min = () => delay(1000 * 60, "No data");
 let delay30Seconds = data => delay(1000 * 30, data);
-// packageLambda()
-//     .then(uploadLambdaCode)
-uploadCode()
+packageLambda()
+    .then(uploadCode)
+    //uploadCode()
     .then(createAWSCloudLabCreateStackSet)
     .then(delay30Seconds)
     .then(createAWSCloudLabExecuteStackSet)
@@ -144,9 +163,10 @@ uploadCode()
         console.log(c);
         dataSeed.run(configure);
     })
+    .then(delay1Min)
+    .then(invokeAWSCloudLabScheduler)
     .catch(console.error);
 
-//dataSeed.run(configure);
 
 
 

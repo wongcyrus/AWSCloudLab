@@ -250,6 +250,7 @@ Resources:
             - ssm:UpdateAssociationStatus
             - ssm:UpdateInstanceAssociationStatus
             - ssm:UpdateInstanceInformation
+            - ssm:ListCommandInvocations
             Resource: "*"
           - Effect: Allow
             Action:

@@ -57,7 +57,7 @@ exports.handler = (event, context, callback) => {
                 "labMaterialSnapshotId": process.env.labMaterialSnapshotId,
                 "labStorageSnapshotId": process.env.labStorageSnapshotId,
                 "instanceType": process.env.instanceType,
-                "continue": process.env.continue,
+                "continue": JSON.parse(process.env.continue.toLowerCase()),
                 "share": process.env.share.split(',').map(x => x.trim())
             }
         }];

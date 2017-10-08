@@ -78,7 +78,7 @@ let createLab = (event, context, callback, region, record) => {
             labContext.users = users;
             next(null, labContext);
         }, (labContext, next) => {
-            if (labContext.course.continue) {
+            if (JSON.parse(labContext.course.continue.toLowerCase())) {
                 console.log("Get Last Lab AMI ID.");
                 let ec2Manager = new Ec2Manager();
                 ec2Manager.getEndLabAmisMap(labContext.course.course, labContext.course.teacher).then(

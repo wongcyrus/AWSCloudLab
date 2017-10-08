@@ -851,6 +851,7 @@ Resources:
             - Enable-OfflineDisk
             - Disable-InternetExplorerESC
             - Disable-UserAccessControl
+            - Restart-Computer
 
 Metadata:
   AWS::CloudFormation::Interface:

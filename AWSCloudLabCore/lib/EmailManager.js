@@ -29,7 +29,7 @@ class EmailManager {
             }]
         }
         return new Promise((resolve, reject) => {
-            console.log(options);
+            console.log("Email to " + options.to + " subject:" + subject);
             if (this.sesRegion && this.sesRegion !== "") {
                 AWS.config.update({region: this.sesRegion});
                 let ses = new AWS.SES();

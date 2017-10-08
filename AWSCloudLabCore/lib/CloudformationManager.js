@@ -18,7 +18,6 @@ class CloudformationManager {
         return new Promise((resolve, reject) => {
             cons.ejs(path, context)
                 .then(template => {
-                    //console.log(template);
                     resolve("" + template);
                 })
                 .catch(err => {
