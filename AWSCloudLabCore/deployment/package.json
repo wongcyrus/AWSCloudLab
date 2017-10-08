@@ -4,7 +4,7 @@
   "description": "AWS Cloud Lab Deployment Tools",
   "license": "MIT",
   "dependencies": {
-    "aws-sdk": "2.4.8",
+    "aws-sdk": "^2.130.0",
     "cfn-response": "^1.0.1",
     "consolidate": "^0.13.1",
     "ejs": "^2.3.4",

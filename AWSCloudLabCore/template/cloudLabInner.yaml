@@ -77,7 +77,10 @@
     Properties:
       Name: !Ref BootstrapDocument
       Targets:
-#    <% users.forEach(function(user,i){ %>
+
       - Key: InstanceIds
-        Values: [!Ref StudentInstance<%-i%>]
+
+        Values:
+#    <% users.forEach(function(user,i){ %>
+        - !Ref StudentInstance<%-i%>
 #    <% }); %>

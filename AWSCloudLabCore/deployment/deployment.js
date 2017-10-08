@@ -5,38 +5,21 @@ const AWS = require('aws-sdk');
 const S3Manager = require('./../lib/S3Manager');
 const dataSeed = require('./dataSeed');
 
-// const configure = {
-//     "projectId": "awscloudlab",
-//     "labRegion": "ap-northeast-1",
-//     "userListS3Bucket": "student2.cloudlabhk.com",
-//     "keypairS3Bucket": "keypairs2.cloudlabhk.com",
-//     "cloudformationS3Bucket": "cloudformation2.cloudlabhk.com",
-//     "labWorkBucket": "labwork2.cloudlabhk.com",
-//     "senderEmail": "noreply@cloudlabhk.com",
-//     "sesRegion": "us-east-1",
-//     "expirationInDays": 180
-// };
-
 const configure = {
     "projectId": "awscloudlab",
     "labRegion": "ap-northeast-1",
-    "userListS3Bucket": "student2.cloudlabhk.com",
-    "keypairS3Bucket": "keypairs2.cloudlabhk.com",
-    "cloudformationS3Bucket": "cloudformation2.cloudlabhk.com",
-    "labWorkBucket": "labwork3.cloudlabhk.com",
-    "senderEmail": "cloudlabaws@gmail.com",
-    "smtpHost": "smtp.gmail.com",
-    "stmpUser": "cloudlabaws@gmail.com",
-    "smtpPassword": "XXXXXXXXXXXXXXXXXXX",
-    "expirationInDays": 180
+    "userListS3Bucket": "awscloudlab-userlist",
+    "sourceBucket": "cloudformation2.cloudlabhk.com"
 };
 
 AWS.config.update({region: configure.labRegion});
 
 let awscloudlabschedulerJar = "awscloudlabscheduler-1.0.jar";
 let awscloudlabschedulerZip = "awscloudlab_latest.zip";
+let awscloudlabCloudFormation = "AWSCloudLab.yaml";
 let awscloudlabschedulerJarFilePath = __dirname + '/../dist/' + awscloudlabschedulerJar;
 let awscloudlabschedulerZipFilePath = __dirname + '/../dist/' + awscloudlabschedulerZip;
+let awscloudlabCloudFormationFilePath = __dirname + '/../dist/' + awscloudlabCloudFormation;
 
 let runCommand = (cmd, workingDir) => new Promise((resolve, reject) => {
     exec(cmd, {cwd: workingDir}, (error, stdout, stderr) => {
@@ -75,41 +58,11 @@ let packageLambda = () => new Promise((resolve, reject) => {
 });
 
 
-let createSourceAndLabworkBucket = () => new Promise((resolveAll, rejectAny) => {
-    let s3 = new AWS.S3();
-
-    let createBucket = (bucket) => new Promise((resolve, reject) => {
-        let params = {
-            Bucket: bucket, /* required */
-            CreateBucketConfiguration: {
-                LocationConstraint: configure.labRegion
-            }
-        };
-        s3.createBucket(params, (err, data) => {
-            //Bucket may exist and cause error, and ignore it!
-            if (err && err.code !== 'BucketAlreadyOwnedByYou')
-                reject(err, err.stack); // an error occurred
-            resolve(data);           // successful response
-        });
-    });
-
-    Promise.all([createBucket(configure.cloudformationS3Bucket), createBucket(configure.labWorkBucket)])
-        .then(results => {
-            results.forEach(console.log);
-            resolveAll("Upload Completed!");
-        }).catch(err => {
-        rejectAny(err);
-    });
-});
-
-let uploadLambdaCode = () => new Promise((resolve, reject) => {
-    let s3Manager = new S3Manager(configure.labRegion, configure.cloudformationS3Bucket);
+let uploadCode = () => new Promise((resolve, reject) => {
+    console.log("Upload Code");
+    let s3Manager = new S3Manager(configure.labRegion, configure.sourceBucket);
     Promise.all([
-        s3Manager.uploadFile("LambdaFunction.yaml", __dirname + "/cfn/LambdaFunction.yaml"),
-        s3Manager.uploadFile("DynamoDB.yaml", __dirname + "/cfn/DynamoDB.yaml"),
-        s3Manager.uploadFile("AWSCloudLabBackend.yaml", __dirname + "/cfn/AWSCloudLabBackend.yaml"),
-        s3Manager.uploadFile("S3.yaml", __dirname + "/cfn/S3.yaml"),
-        s3Manager.uploadFile("SNS.yaml", __dirname + "/cfn/SNS.yaml"),
+        s3Manager.uploadFile(awscloudlabCloudFormation, awscloudlabCloudFormationFilePath),
         s3Manager.uploadFile(awscloudlabschedulerZip, awscloudlabschedulerZipFilePath),
         s3Manager.uploadFile(awscloudlabschedulerJar, awscloudlabschedulerJarFilePath)
     ]).then(results => {
@@ -120,53 +73,23 @@ let uploadLambdaCode = () => new Promise((resolve, reject) => {
     });
 });
 
+let cloudformation = new AWS.CloudFormation({
+    region: configure.labRegion,
+    apiVersion: '2010-05-15'
+});
 
-let createAWSCloudLabStack = () => new Promise((resolve, reject) => {
+let createAWSCloudLabCreateStackSet = () => new Promise((resolve, reject) => {
     let params = {
-        StackName: "AWSCloudLab", /* required */
+        ChangeSetName: "AWSCloudLabChangeSet", /* required */
+        StackName: 'AWSCloudLab', /* required */
+        ChangeSetType: "CREATE",
         Capabilities: [
             'CAPABILITY_IAM'
         ],
         Parameters: [
             {
-                ParameterKey: 'SourceBucket',
-                ParameterValue: configure.cloudformationS3Bucket,
-                UsePreviousValue: true
-            },
-            {
-                ParameterKey: 'KeypairsBucket',
-                ParameterValue: configure.keypairS3Bucket,
-                UsePreviousValue: true
-            },
-            {
-                ParameterKey: 'UserListBucket',
-                ParameterValue: configure.userListS3Bucket,
-                UsePreviousValue: true
-            },
-            {
-                ParameterKey: 'DynamoDBStackUrl',
-                ParameterValue: `https://s3-${configure.labRegion}.amazonaws.com/${configure.cloudformationS3Bucket}/DynamoDB.yaml`,
-                UsePreviousValue: true
-            },
-            {
-                ParameterKey: 'LambdaStackUrl',
-                ParameterValue: `https://s3-${configure.labRegion}.amazonaws.com/${configure.cloudformationS3Bucket}/LambdaFunction.yaml`,
-                UsePreviousValue: true
-            },
-            {
-                ParameterKey: 'S3StackUrl',
-                ParameterValue: `https://s3-${configure.labRegion}.amazonaws.com/${configure.cloudformationS3Bucket}/S3.yaml`,
-                UsePreviousValue: true
-            },
-            {
-                ParameterKey: 'SNSStackUrl',
-                ParameterValue: `https://s3-${configure.labRegion}.amazonaws.com/${configure.cloudformationS3Bucket}/SNS.yaml`,
-                UsePreviousValue: true
-            },
-            {
-                ParameterKey: 'ExpirationInDays',
-                ParameterValue: "" + configure.expirationInDays,
-                UsePreviousValue: true
+                ParameterKey: 'dynamodbAutoscaling',
+                ParameterValue: "false"
             }
         ]
         ,
@@ -176,39 +99,51 @@ let createAWSCloudLabStack = () => new Promise((resolve, reject) => {
                 Value: "AWS Cloud Lab"
             }
         ],
-        TemplateURL: `https://s3-${configure.labRegion}.amazonaws.com/${configure.cloudformationS3Bucket}/AWSCloudLabBackend.yaml`,
-        TimeoutInMinutes: 15
+        TemplateURL: `https://s3-${configure.labRegion}.amazonaws.com/${configure.sourceBucket}/${awscloudlabCloudFormation}`
     };
-    let cloudformation = new AWS.CloudFormation({
-        region: configure.labRegion,
-        apiVersion: '2010-05-1let5'
-    });
-    cloudformation.createStack(params, (err, stackData) => {
+
+    cloudformation.createChangeSet(params, (err, stackData) => {
         if (err) reject(err); // an error occurred
         else {
             console.log(stackData);           // successful
-            resolve(stackData.ResponseMetadata.StackId);
+            resolve(stackData.StackId);
+        }
+    });
+});
+let createAWSCloudLabExecuteStackSet = (stackSetId) => new Promise((resolve, reject) => {
+    let params = {
+        ChangeSetName: "AWSCloudLabChangeSet", /* required */
+        StackName: "AWSCloudLab"
+    };
+    console.log(params);
+    cloudformation.executeChangeSet(params, function (err, data) {
+        if (err) console.log(err, err.stack); // an error occurred
+        else {
+            console.log(data);           // successful response
+            resolve(data);
         }
     });
 });
 
-let delay = ms => {
+let delay = (ms, data) => {
     return new Promise((resolve, reject) => {
-        console.log("Delay for " + ms + "ms.");
-        setTimeout(resolve, ms); // (A)
+        console.log("Delay for " + ms + "ms. data" + data);
+        setTimeout(() => resolve(data), ms); // (A)
     });
 };
-let delay1Min = () => delay(1000 * 60);
-
-packageLambda()
-    .then(createSourceAndLabworkBucket())
-    .then(uploadLambdaCode)
-    // .then(createAWSCloudLabStack)
-    // .then(delay1Min)
-    // .then(c => {
-    //     console.log(c);
-    //     dataSeed.run(configure);
-    // })
+let delay1Min = () => delay(1000 * 60, "No data");
+let delay30Seconds = data => delay(1000 * 30, data);
+// packageLambda()
+//     .then(uploadLambdaCode)
+uploadCode()
+    .then(createAWSCloudLabCreateStackSet)
+    .then(delay30Seconds)
+    .then(createAWSCloudLabExecuteStackSet)
+    .then(delay1Min)
+    .then(c => {
+        console.log(c);
+        dataSeed.run(configure);
+    })
     .catch(console.error);
 
 //dataSeed.run(configure);
