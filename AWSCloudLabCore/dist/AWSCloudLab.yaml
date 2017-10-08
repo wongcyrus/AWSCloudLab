@@ -95,7 +95,15 @@ Parameters:
       - true
       - false
     Description: true, It will use the end lab ami for the second lab! imageId will only be used in the first lab.
-
+  dynamodbAutoscaling:
+    Type: String
+    Default: false
+    AllowedValues:
+      - true
+      - false
+    Description: Enable DynamoDB AutoScaling
+Conditions:
+  EnableDynamodbAutoscaling: !Equals [ !Ref dynamodbAutoscaling, true ]
 Resources:
   AWSCloudLabSchedulerFunction:
     Type: AWS::Serverless::Function
@@ -191,6 +199,9 @@ Resources:
               - !Sub arn:aws:dynamodb:${AWS::Region}:${AWS::AccountId}:table/course
               - !Sub arn:aws:dynamodb:${AWS::Region}:${AWS::AccountId}:table/calendar
               - !Sub arn:aws:dynamodb:${AWS::Region}:${AWS::AccountId}:table/lab
+      Environment:
+        Variables:
+          BootstrapDocument: !Ref BootstrapDocument
 
   AWSCloudLabTerminatorFunction:
     Type: AWS::Serverless::Function
@@ -535,9 +546,9 @@ Resources:
         WriteCapacityUnits: 1
 
 # DynamoDB AutoScaling
-
   DynamoDBAutoscalingRole:
     Type: AWS::IAM::Role
+    Condition: EnableDynamodbAutoscaling
     Properties:
       AssumeRolePolicyDocument:
         Version: 2012-10-17
@@ -569,6 +580,7 @@ Resources:
 
   configureDynamoDBTableWriteScalingTarget:
     Type: AWS::ApplicationAutoScaling::ScalableTarget
+    Condition: EnableDynamodbAutoscaling
     Properties:
       MinCapacity: 1
       MaxCapacity: 50
@@ -579,6 +591,7 @@ Resources:
 
   configureDynamoDBTableWriteScalingPolicy:
     Type: AWS::ApplicationAutoScaling::ScalingPolicy
+    Condition: EnableDynamodbAutoscaling
     Properties:
       PolicyName: TableWriteScalingPolicy
       PolicyType: TargetTrackingScaling
@@ -592,6 +605,7 @@ Resources:
 
   configureDynamoDBTableReadScalingTarget:
     Type: AWS::ApplicationAutoScaling::ScalableTarget
+    Condition: EnableDynamodbAutoscaling
     Properties:
       MinCapacity: 1
       MaxCapacity: 50
@@ -602,6 +616,7 @@ Resources:
 
   configureDynamoDBTableReadScalingPolicy:
     Type: AWS::ApplicationAutoScaling::ScalingPolicy
+    Condition: EnableDynamodbAutoscaling
     Properties:
       PolicyName: TableReadScalingPolicy
       PolicyType: TargetTrackingScaling
@@ -615,6 +630,7 @@ Resources:
 
   courseDynamoDBTableWriteScalingTarget:
     Type: AWS::ApplicationAutoScaling::ScalableTarget
+    Condition: EnableDynamodbAutoscaling
     Properties:
       MinCapacity: 1
       MaxCapacity: 50
@@ -625,6 +641,7 @@ Resources:
 
   courseDynamoDBTableWriteScalingPolicy:
     Type: AWS::ApplicationAutoScaling::ScalingPolicy
+    Condition: EnableDynamodbAutoscaling
     Properties:
       PolicyName: TableWriteScalingPolicy
       PolicyType: TargetTrackingScaling
@@ -638,6 +655,7 @@ Resources:
 
   courseDynamoDBTableReadScalingTarget:
     Type: AWS::ApplicationAutoScaling::ScalableTarget
+    Condition: EnableDynamodbAutoscaling
     Properties:
       MinCapacity: 1
       MaxCapacity: 50
@@ -648,6 +666,7 @@ Resources:
 
   courseDynamoDBTableReadScalingPolicy:
     Type: AWS::ApplicationAutoScaling::ScalingPolicy
+    Condition: EnableDynamodbAutoscaling
     Properties:
       PolicyName: TableReadScalingPolicy
       PolicyType: TargetTrackingScaling
@@ -661,6 +680,7 @@ Resources:
 
   calendarDynamoDBTableWriteScalingTarget:
     Type: AWS::ApplicationAutoScaling::ScalableTarget
+    Condition: EnableDynamodbAutoscaling
     Properties:
       MinCapacity: 1
       MaxCapacity: 50
@@ -671,6 +691,7 @@ Resources:
 
   calendarDynamoDBTableWriteScalingPolicy:
     Type: AWS::ApplicationAutoScaling::ScalingPolicy
+    Condition: EnableDynamodbAutoscaling
     Properties:
       PolicyName: TableWriteScalingPolicy
       PolicyType: TargetTrackingScaling
@@ -684,6 +705,7 @@ Resources:
 
   calendarDynamoDBTableReadScalingTarget:
     Type: AWS::ApplicationAutoScaling::ScalableTarget
+    Condition: EnableDynamodbAutoscaling
     Properties:
       MinCapacity: 1
       MaxCapacity: 50
@@ -694,6 +716,7 @@ Resources:
 
   calendarDynamoDBTableReadScalingPolicy:
     Type: AWS::ApplicationAutoScaling::ScalingPolicy
+    Condition: EnableDynamodbAutoscaling
     Properties:
       PolicyName: TableReadScalingPolicy
       PolicyType: TargetTrackingScaling
@@ -707,6 +730,7 @@ Resources:
 
   labDynamoDBTableWriteScalingTarget:
     Type: AWS::ApplicationAutoScaling::ScalableTarget
+    Condition: EnableDynamodbAutoscaling
     Properties:
       MinCapacity: 1
       MaxCapacity: 50
@@ -717,6 +741,7 @@ Resources:
 
   labDynamoDBTableWriteScalingPolicy:
     Type: AWS::ApplicationAutoScaling::ScalingPolicy
+    Condition: EnableDynamodbAutoscaling
     Properties:
       PolicyName: TableWriteScalingPolicy
       PolicyType: TargetTrackingScaling
@@ -730,6 +755,7 @@ Resources:
 
   labDynamoDBTableReadScalingTarget:
     Type: AWS::ApplicationAutoScaling::ScalableTarget
+    Condition: EnableDynamodbAutoscaling
     Properties:
       MinCapacity: 1
       MaxCapacity: 50
@@ -740,6 +766,7 @@ Resources:
 
   labDynamoDBTableReadScalingPolicy:
     Type: AWS::ApplicationAutoScaling::ScalingPolicy
+    Condition: EnableDynamodbAutoscaling
     Properties:
       PolicyName: TableReadScalingPolicy
       PolicyType: TargetTrackingScaling
@@ -750,6 +777,80 @@ Resources:
         ScaleInCooldown: 60
         ScaleOutCooldown: 60
         TargetValue: 75
+
+#Run Command
+  BootstrapDocument:
+    Type: AWS::SSM::Document
+    Properties:
+      DocumentType: Command
+      Content:
+        schemaVersion: "2.2"
+        description: 'Enable-OfflineDisk : Find and enable offline disks on Windows.'
+        mainSteps:
+        - action: aws:runPowerShellScript
+          name: EnableOfflineDisk
+          precondition:
+            StringEquals:
+            - platformType
+            - Windows
+          inputs:
+            runCommand:
+            - "function Enable-OfflineDisk"
+            - "{"
+            - '    $offlinedisk = "list disk" | diskpart | where {$_ -match "offline"}'
+            - "    if($offlinedisk)"
+            - "    {    "
+            - '        Write-Output "Following Offline disk(s) found..Trying to bring Online."'
+            - "        $offlinedisk"
+            - "        foreach($offdisk in $offlinedisk)"
+            - "        {    "
+            - "            $offdiskS = $offdisk.Substring(2,6)"
+            - '            Write-Output "Enabling $offdiskS"'
+            - $OnlineDisk = @"
+            - select $offdiskS
+            - attributes disk clear readonly
+            - online disk
+            - attributes disk clear readonly
+            - "\"@"
+            - "            $noOut = $OnlineDisk | diskpart"
+            - "            sleep 5    "
+            - "       }"
+            - ''
+            - '        if(($offlinedisk = "list disk" | diskpart | where {$_ -match "offline"}
+              ))'
+            - "        {        "
+            - '            Write-Output "Failed to bring the following disk(s) online"'
+            - "            $offlinedisk"
+            - "        }"
+            - "        else"
+            - "        {    "
+            - '            Write-Output "Disk(s) are now online."'
+            - "        }"
+            - ''
+            - "    }"
+            - "    else"
+            - "    {"
+            - '        Write-Host "All disk(s) are online!"'
+            - "    }"
+            - "}"
+            - function Disable-InternetExplorerESC {
+            - '    $AdminKey = "HKLM:\SOFTWARE\Microsoft\Active Setup\Installed Components\{A509B1A7-37EF-4b3f-8CFC-4F3A74704073}"'
+            - '    $UserKey = "HKLM:\SOFTWARE\Microsoft\Active Setup\Installed Components\{A509B1A8-37EF-4b3f-8CFC-4F3A74704073}"'
+            - '    Set-ItemProperty -Path $AdminKey -Name "IsInstalled" -Value 0 -Force'
+            - '    Set-ItemProperty -Path $UserKey -Name "IsInstalled" -Value 0 -Force'
+            - "    Stop-Process -Name Explorer -Force"
+            - '    Write-Host "IE Enhanced Security Configuration (ESC) has been disabled." -ForegroundColor
+              Green'
+            - "}"
+            - function Disable-UserAccessControl {
+            - '    Set-ItemProperty "HKLM:\SOFTWARE\Microsoft\Windows\CurrentVersion\Policies\System"
+              -Name "ConsentPromptBehaviorAdmin" -Value 00000000 -Force'
+            - '    Write-Host "User Access Control (UAC) has been disabled." -ForegroundColor
+              Green    '
+            - "}"
+            - Enable-OfflineDisk
+            - Disable-InternetExplorerESC
+            - Disable-UserAccessControl
 
 Metadata:
   AWS::CloudFormation::Interface:
@@ -774,6 +875,7 @@ Metadata:
           - smtpHost
           - smtpPassword
           - stmpUser
+          - dynamodbAutoscaling
       -
         Label:
           default: First Course Configuration
@@ -831,3 +933,5 @@ Metadata:
         default: Share Mode
       continue:
         default: Is Continue
+      dynamodbAutoscaling:
+        default: Enable DynamoDB AutoScaling

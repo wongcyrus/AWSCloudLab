@@ -146,6 +146,10 @@ class CloudformationManager {
                 {
                     ParameterKey: 'SmtpPassword',
                     ParameterValue: this.labContext.configure.smtpPassword || ""
+                },
+                {
+                    ParameterKey: 'BootstrapDocument',
+                    ParameterValue: this.labContext.BootstrapDocument || ""
                 }
             ],
             Tags: [

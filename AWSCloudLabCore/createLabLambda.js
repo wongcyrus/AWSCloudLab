@@ -117,6 +117,7 @@ let createLab = (event, context, callback, region, record) => {
         },
         (labContext, next) => {
             console.log("Run Cloudformation");
+            labContext.BootstrapDocument = process.env.BootstrapDocument;
             let cloudformationManager = new CloudformationManager(labContext);
 
             cloudformationManager.runCloudformation()

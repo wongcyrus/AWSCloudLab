@@ -90,11 +90,3 @@
         DeleteOnTermination: 'true'
         SubnetId:
           Ref: Subnet
-
-  DocumentAssociation<%-i%>:
-    Type: AWS::SSM::Association
-    Properties:
-      Name: !Ref EnableOfflineDiskDocument
-      Targets:
-      - Key: InstanceIds
-        Values: [!Ref StudentInstance<%-i%>]

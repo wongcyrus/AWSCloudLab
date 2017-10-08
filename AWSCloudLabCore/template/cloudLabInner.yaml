@@ -71,3 +71,13 @@
     <%- include('ec2.yaml', {i: i,user:user}) %>
 #    <%}%>
 #    <% }); %>
+
+  BootstrapDocumentAssociation:
+    Type: AWS::SSM::Association
+    Properties:
+      Name: !Ref BootstrapDocument
+      Targets:
+#    <% users.forEach(function(user,i){ %>
+      - Key: InstanceIds
+        Values: [!Ref StudentInstance<%-i%>]
+#    <% }); %>
