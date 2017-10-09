@@ -209,6 +209,7 @@ Resources:
       Environment:
         Variables:
           BootstrapDocument: !Ref BootstrapDocument
+          DisableUserAccessControlDocument: !Ref DisableUserAccessControlDocument
 
   AWSCloudLabTerminatorFunction:
     Type: AWS::Serverless::Function

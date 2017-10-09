@@ -148,6 +148,10 @@ class CloudformationManager {
                 {
                     ParameterKey: 'BootstrapDocument',
                     ParameterValue: this.labContext.BootstrapDocument || ""
+                },
+                {
+                    ParameterKey: 'DisableUserAccessControlDocument',
+                    ParameterValue: this.labContext.DisableUserAccessControlDocument || ""
                 }
             ],
             Tags: [
