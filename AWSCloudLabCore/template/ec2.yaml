@@ -77,6 +77,12 @@
           Ref: CFNUser<%-i%>
       - Key: Password
         Value: "<%-user.password%>"
+      - Key: LabRole
+        #    <%if (user.role=='student') { %>
+        Value: student
+        #    <% }else{ %>
+        Value: teacher
+        #    <%}%>
       IamInstanceProfile:
 #    <%if (user.role=='student') { %>
         Ref: StudentEC2InstanceProfile

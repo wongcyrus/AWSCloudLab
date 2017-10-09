@@ -56,6 +56,13 @@ Parameters:
     Type: String
     Default: AKIAIKWPMS2VFUW7PQUA
     Description: SMTP server login user, if SES Region is not empty string.
+  dynamodbAutoscaling:
+    Type: String
+    Default: false
+    AllowedValues:
+      - true
+      - false
+    Description: Enable DynamoDB AutoScaling
   teacherEmail:
     Type: String
     Default: cywong@vtc.edu.hk
@@ -74,11 +81,11 @@ Parameters:
     Description: AMI ID, and it must be in Lab region.
   labMaterialSnapshotId:
     Type: String
-    Default: snap-0e5811ac573f45c2b
+    Default: snap-08fb412d904808988
     Description: Snapshot ID, and it must be in lab region. It will not be backup! Teacher uses it to share lab related files to students!
   labStorageSnapshotId:
     Type: String
-    Default: snap-0e5811ac573f45c2b
+    Default: snap-01761ab478dc97796
     Description: Snapshot ID, and it must be in lab region. It will backup with snapshot, and share back to student, if student provides his AWS Account ID.
   instanceType:
     Type: String
@@ -95,13 +102,13 @@ Parameters:
       - true
       - false
     Description: true, It will use the end lab ami for the second lab! imageId will only be used in the first lab.
-  dynamodbAutoscaling:
+  disableUAC:
     Type: String
-    Default: false
+    Default: true
     AllowedValues:
       - true
       - false
-    Description: Enable DynamoDB AutoScaling
+    Description: Disable Windows User Access Control (UAC)
 Conditions:
   EnableDynamodbAutoscaling: !Equals [ !Ref dynamodbAutoscaling, true ]
 Resources:
@@ -423,6 +430,7 @@ Resources:
           instanceType: !Ref instanceType
           share: !Ref share
           continue: !Ref continue
+          disableUAC: !Ref disableUAC
 
   InitDBCustomReseources:
     Type: Custom::InitDB
@@ -842,16 +850,34 @@ Resources:
             - '    Write-Host "IE Enhanced Security Configuration (ESC) has been disabled." -ForegroundColor
               Green'
             - "}"
+            - Enable-OfflineDisk
+            - Disable-InternetExplorerESC
+            - Restart-Computer -Force
+
+  DisableUserAccessControlDocument:
+    Type: AWS::SSM::Document
+    Properties:
+      DocumentType: Command
+      Content:
+        schemaVersion: "2.2"
+        description: 'Disable-UserAccessControl : User Access Control (UAC).'
+        mainSteps:
+        - action: aws:runPowerShellScript
+          name: EnableOfflineDisk
+          precondition:
+            StringEquals:
+            - platformType
+            - Windows
+          inputs:
+            runCommand:
             - function Disable-UserAccessControl {
             - '    Set-ItemProperty "HKLM:\SOFTWARE\Microsoft\Windows\CurrentVersion\Policies\System"
               -Name "ConsentPromptBehaviorAdmin" -Value 00000000 -Force'
             - '    Write-Host "User Access Control (UAC) has been disabled." -ForegroundColor
               Green    '
             - "}"
-            - Enable-OfflineDisk
-            - Disable-InternetExplorerESC
             - Disable-UserAccessControl
-            - Restart-Computer
+            - Restart-Computer -Force
 
 Metadata:
   AWS::CloudFormation::Interface:
@@ -891,6 +917,7 @@ Metadata:
           - labWorkExpirationInDays
           - share
           - continue
+          - disableUAC
     ParameterLabels:
       SourceBucket:
         default: Source Bucket
@@ -936,3 +963,5 @@ Metadata:
         default: Is Continue
       dynamodbAutoscaling:
         default: Enable DynamoDB AutoScaling
+      disableUAC:
+        default: Disable Windows User Access Control (UAC) and it requires reboot!

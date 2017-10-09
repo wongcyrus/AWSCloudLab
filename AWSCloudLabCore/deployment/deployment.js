@@ -133,7 +133,7 @@ let invokeAWSCloudLabScheduler = (stackSetId) => new Promise((resolve, reject) =
     let lambda = new AWS.Lambda({region: configure.labRegion, apiVersion: '2015-03-31'});
     let params = {
         FunctionName: "AWSCloudLabScheduler",
-        InvokeArgs: ""
+        InvokeArgs: "{}"
     };
     lambda.invokeAsync(params, function (err, data) {
         if (err) console.log(err, err.stack); // an error occurred
@@ -154,7 +154,7 @@ let delay1Min = () => delay(1000 * 60, "No data");
 let delay30Seconds = data => delay(1000 * 30, data);
 packageLambda()
     .then(uploadCode)
-    //uploadCode()
+    // uploadCode()
     .then(createAWSCloudLabCreateStackSet)
     .then(delay30Seconds)
     .then(createAWSCloudLabExecuteStackSet)

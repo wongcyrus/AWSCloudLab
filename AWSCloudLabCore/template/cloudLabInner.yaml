@@ -77,10 +77,20 @@
     Properties:
       Name: !Ref BootstrapDocument
       Targets:
-
       - Key: InstanceIds
-
         Values:
 #    <% users.forEach(function(user,i){ %>
         - !Ref StudentInstance<%-i%>
 #    <% }); %>
+#    <%if (labContext.course.disableUAC) { %>
+  DisableUserAccessControlDocumentAssociation:
+    Type: AWS::SSM::Association
+    Properties:
+      Name: !Ref DisableUserAccessControlDocument
+      Targets:
+      - Key: InstanceIds
+        Values:
+#    <% users.forEach(function(user,i){ %>
+        - !Ref StudentInstance<%-i%>
+#    <% }); %>
+#    <%}%>

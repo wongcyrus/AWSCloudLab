@@ -58,6 +58,7 @@ exports.handler = (event, context, callback) => {
                 "labStorageSnapshotId": process.env.labStorageSnapshotId,
                 "instanceType": process.env.instanceType,
                 "continue": JSON.parse(process.env.continue.toLowerCase()),
+                "disableUAC": JSON.parse(process.env.disableUAC.toLowerCase()),
                 "share": process.env.share.split(',').map(x => x.trim())
             }
         }];

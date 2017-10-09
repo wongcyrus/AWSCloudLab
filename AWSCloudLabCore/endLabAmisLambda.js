@@ -17,7 +17,7 @@ exports.handler = (event, context, callback) => {
             setTimeout(resolve, ms); // (A)
         });
     };
-    let delay1Min = ()=> delay(1000 * 60);
+    let delay90Seconds = () => delay(1000 * 90);
 
     if (event.RequestType === 'Delete') {
         let ec2InstanceIds = event.ResourceProperties.Ec2Instances;
@@ -46,7 +46,7 @@ exports.handler = (event, context, callback) => {
             .then(()=> getAllTags())
             .then(createAllAmi)
             .then(createAllTags)
-            .then(delay1Min) //Give 1 mins for the AMI creation become stable.
+            .then(delay90Seconds) //Give 1 mins for the AMI creation become stable.
             .then(()=> {
                 response.send(event, context, response.SUCCESS);
                 callback(null, "Competed! EndLab Ami");

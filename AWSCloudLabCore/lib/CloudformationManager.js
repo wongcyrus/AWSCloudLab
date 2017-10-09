@@ -55,8 +55,7 @@ class CloudformationManager {
         };
         //No idea why cannot reference this._bindTemplate!
         return new Promise((resolve, reject) => {
-            console.log('template/backupLabStorage.yaml');
-            console.log(context);
+            console.log('Create bindBackupCfnTemplate');
             cons.ejs('template/backupLabStorage.yaml', context)
                 .then(template => {
                     resolve(template);

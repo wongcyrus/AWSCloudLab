@@ -15,11 +15,11 @@ class Ec2Manager {
                 awsAccountId
             ]
         };
-        return new Promise((resolve, reject)=> {
+        return new Promise((resolve, reject) => {
             let ec2 = new AWS.EC2();
             ec2.modifySnapshotAttribute(params, (err, data) => {
                 if (err) reject(err); // an error occurred
-                else     resolve(data);           // successful response
+                else resolve(data);           // successful response
             });
         })
     }
@@ -34,7 +34,7 @@ class Ec2Manager {
                 awsAccountId
             ]
         };
-        return new Promise((resolve, reject)=> {
+        return new Promise((resolve, reject) => {
             let ec2 = new AWS.EC2();
             ec2.modifyImageAttribute(params, (err, data) => {
                 if (err && err.code === "AuthFailure") {
@@ -42,13 +42,13 @@ class Ec2Manager {
                     resolve(data);
                 }
                 if (err) reject(err); // an error occurred
-                else     resolve(data);           // successful response
+                else resolve(data);           // successful response
             });
         })
     }
 
     getSharableImageIds(lab) {
-        return new Promise((resolve, reject)=> {
+        return new Promise((resolve, reject) => {
             let params = {
                 Filters: [{
                     Name: 'tag:lab', Values: [lab]
@@ -58,10 +58,10 @@ class Ec2Manager {
             ec2.describeImages(params, (err, data) => {
                 if (err) reject(err); // an error occurred
                 else {
-                    resolve(data.Images.map(c=> {
+                    resolve(data.Images.map(c => {
                         return {
                             imageId: c.ImageId,
-                            email: c.Tags.find(p=>p.Key === 'Owner').Value
+                            email: c.Tags.find(p => p.Key === 'Owner').Value
                         }
                     }));
                 }
@@ -71,18 +71,18 @@ class Ec2Manager {
     }
 
     getSnapshots(snapshotIds) {
-        return new Promise((resolve, reject)=> {
+        return new Promise((resolve, reject) => {
             let params = {DryRun: false, SnapshotIds: snapshotIds};
             let ec2 = new AWS.EC2();
             ec2.describeSnapshots(params, (err, data) => {
                 if (err) reject(err); // an error occurred
-                else    resolve(data);           // successful response
+                else resolve(data);           // successful response
             });
         });
     }
 
     detachVolume(volumeId) {
-        return new Promise((resolve, reject)=> {
+        return new Promise((resolve, reject) => {
             let params = {
                 VolumeId: volumeId, /* required */
                 DryRun: false,
@@ -91,14 +91,13 @@ class Ec2Manager {
             let ec2 = new AWS.EC2();
             ec2.detachVolume(params, (err, data) => {
                 if (err) reject(err); // an error occurred
-                else    resolve(data);           // successful response
+                else resolve(data);           // successful response
             });
         });
     }
 
-
     getInstances(instanceIds) {
-        return new Promise((resolve, reject)=> {
+        return new Promise((resolve, reject) => {
             let params = {
                 DryRun: false,
                 InstanceIds: instanceIds
@@ -107,13 +106,13 @@ class Ec2Manager {
             let ec2 = new AWS.EC2();
             ec2.describeInstances(params, (err, data) => {
                 if (err) reject(err); // an error occurred
-                else    resolve(data);           // successful response
+                else resolve(data);           // successful response
             });
         });
     }
 
     getTags(instanceId) {
-        return new Promise((resolve, reject)=> {
+        return new Promise((resolve, reject) => {
             let params = {
                 DryRun: false,
                 Filters: [
@@ -127,9 +126,9 @@ class Ec2Manager {
             };
             let ec2 = new AWS.EC2();
             ec2.describeTags(params, (err, data) => {
-                data.Tags = data.Tags.map(c=> {
+                data.Tags = data.Tags.map(c => {
                     return {Key: c.Key, Value: c.Value}
-                }).filter(p=>!p.Key.startsWith('aws:'));
+                }).filter(p => !p.Key.startsWith('aws:'));
 
                 if (err) reject(err); // an error occurred
                 else
@@ -140,7 +139,7 @@ class Ec2Manager {
     }
 
     createAmi(data) {
-        return new Promise((resolve, reject)=> {
+        return new Promise((resolve, reject) => {
             let params = {
                 InstanceId: data.instanceId, /* required */
                 Name: data.lab + "-" + data.user, /* required */
@@ -160,7 +159,7 @@ class Ec2Manager {
     }
 
     createTags(data) {
-        return new Promise((resolve, reject)=> {
+        return new Promise((resolve, reject) => {
             let params = {
                 Resources: [/* required */
                     data.amiId
@@ -171,13 +170,13 @@ class Ec2Manager {
             let ec2 = new AWS.EC2();
             ec2.createTags(params, (err, data) => {
                 if (err) reject(err); // an error occurred
-                else     resolve(data);           // successful response
+                else resolve(data);           // successful response
             });
         });
     }
 
     getEndLabAmisMap(course, teacher) {
-        return new Promise((resolve, reject)=> {
+        return new Promise((resolve, reject) => {
             let params = {
                 Filters: [{
                     Name: 'tag:course', Values: [course]
@@ -193,10 +192,10 @@ class Ec2Manager {
                     if (data.Images.length === 0)
                         resolve(new Map());
                     else
-                        resolve(data.Images.map(c=> {
+                        resolve(data.Images.map(c => {
                                 return {
                                     imageId: c.ImageId,
-                                    email: c.Tags.find(p=>p.Key === 'Owner').Value,
+                                    email: c.Tags.find(p => p.Key === 'Owner').Value,
                                     creationDate: new Date(c.CreationDate)
                                 }
                             }).reduce((previousValue, currentValue) => {
