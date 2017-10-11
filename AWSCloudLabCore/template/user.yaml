@@ -21,4 +21,8 @@
             - ec2:DescribeInstanceStatus
             Condition:
               StringEquals:
+#    <%if (user.role=='student') { %>
                 ec2:ResourceTag/Owner: "<%-user.email%>"
+#    <% }else{ %>
+                ec2:ResourceTag/Application: Ref! AWS::StackId
+#    <%}%>
