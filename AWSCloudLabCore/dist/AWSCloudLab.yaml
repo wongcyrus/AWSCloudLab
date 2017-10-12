@@ -853,7 +853,6 @@ Resources:
             - "}"
             - Enable-OfflineDisk
             - Disable-InternetExplorerESC
-            - Restart-Computer -Force
 
   DisableUserAccessControlDocument:
     Type: AWS::SSM::Document
@@ -871,6 +870,7 @@ Resources:
             - Windows
           inputs:
             runCommand:
+            - Start-Sleep -s 180
             - function Disable-UserAccessControl {
             - '    Set-ItemProperty "HKLM:\SOFTWARE\Microsoft\Windows\CurrentVersion\Policies\System"
               -Name "ConsentPromptBehaviorAdmin" -Value 00000000 -Force'
